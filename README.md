@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SCAD-INTESS
 
-## Getting Started
+Sistema de Control Académico y Disciplinario para el Instituto Nacional Tecnológico de San Salvador (INTESS). Plataforma web para la gestión de matrículas, calificaciones, asistencia, registro disciplinario y reportes oficiales de una institución de educación media con ~950 estudiantes.
 
-First, run the development server:
+Proyecto de cátedra — Universidad Francisco Gavidia, Equipo N°
+
+## Stack
+
+| Capa | Tecnología |
+|---|---|
+| Framework | Next.js (App Router) + TypeScript |
+| Base de datos | MySQL 8.0+ |
+| Acceso a datos | mysql2 (SQL directo, sin ORM ni migraciones) |
+| Autenticación | Auth.js (NextAuth) + bcrypt, RBAC contra tablas `rol`/`permiso` |
+| Validación | Zod + react-hook-form |
+| UI | Tailwind CSS + shadcn/ui |
+| PDFs | @react-pdf/renderer |
+
+## Requisitos previos
+
+- Node.js 20+
+- MySQL corriendo localmente (XAMPP funciona: solo se usa su MySQL, no Apache)
+- Git
+
+## Setup (primera vez)
+
+**1. Clonar e instalar dependencias**
+
+```bash
+git clone https://github.com/Alex-UFG/SCAD-INTESS.git
+cd SCAD-INTESS
+npm install
+```
+
+**2. Crear la base de datos**
+
+Con MySQL corriendo, ejecutar los scripts en orden desde la carpeta `database/`:
+
+```bash
+cd database
+mysql -u root -p < 001_schema.sql
+mysql -u root -p < 002_seed.sql
+```
+
+Esto crea la base `scad_intess` con 24 tablas y los datos estructurales: 5 roles, 25 permisos, 4 especialidades, el ciclo escolar con sus trimestres y el usuario administrador inicial.
+
+**3. Variables de entorno**
+
+Copiar la plantilla y completar:
+
+```bash
+cp .env.example .env.local
+```
+
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_USER=root
+DATABASE_PASSWORD=
+DATABASE_NAME=scad_intess
+AUTH_SECRET=        # generar con: npx auth secret
+AUTH_URL=http://localhost:3000
+```
+
+`.env.local` no se versiona. Nunca commitear credenciales.
+
+**4. Levantar el servidor de desarrollo**
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**5. Verificar la conexión a la base de datos**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Abrir [http://localhost:3000/api/health](http://localhost:3000/api/health). Respuesta esperada:
 
-## Learn More
+```json
+{ "status": "ok", "db": { "roles": 5, "permisos": 25, "especialidades": 4 } }
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Credenciales iniciales
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| `admin@intess.edu.sv` | `Admin2026!` | Admin |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Cambiar la contraseña en el primer inicio de sesión.
 
-## Deploy on Vercel
+## Base de datos: convención de scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**No se usan migraciones del framework.** El esquema vive en scripts SQL numerados dentro de `database/`, que se ejecutan en orden:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+database/
+├── 001_schema.sql   # 24 tablas, FKs e índices
+├── 002_seed.sql     # roles, permisos, catálogos, admin inicial
+└── run.bat          # ejecuta todo en orden (Windows)
+```
+
+Reglas:
+
+- Los scripts ya mergeados son **inmutables**: un cambio de esquema se agrega como nuevo script (`003_alter_x.sql`), nunca editando los anteriores.
+- Para recrear la base desde cero: `DROP DATABASE scad_intess;` y volver a correr los scripts en orden.
+
+## Estructura del proyecto
+
+```
+├── database/          # Scripts SQL versionados (schema + seeds)
+├── src/
+│   ├── app/           # Rutas, layouts y API (App Router)
+│   ├── components/    # Componentes UI compartidos
+│   ├── lib/           # db.ts (pool mysql2), auth, validaciones Zod
+│   └── types/         # Interfaces TypeScript por tabla
+├── uploads/           # Evidencias disciplinarias (NO versionado)
+└── PROYECTO.md        # Documentación de arquitectura y decisiones
+```
+
+## Módulos
+
+- **Matrícula** — expedientes estudiantiles, tutores legales, asignación de sección
+- **Control de Notas** — captura por trimestre (Act1 35% + Act2 35% + Examen 30%), detección de riesgo académico (< 6.00), bloqueo 72h tras cierre de periodo
+- **Registro Disciplinario** — incidencias Leve/Grave/Muy Grave, escalamiento automático (3 leves → Grave), citaciones a tutores, evidencias
+- **Reportes** — boleta de calificaciones (REP-01), certificado conductual (REP-02), constancia de matrícula (REP-03), consolidado gerencial
+- **Auditoría** — bitácora inmutable de toda acción (usuario, datos antes/después, IP)
