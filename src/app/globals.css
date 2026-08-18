@@ -1,26 +1,52 @@
 @import "tailwindcss";
 
+/* Dark mode por clase .dark en <html> (controlada por el toggle del header) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Identidad institucional */
+  --color-intess: #1e4b8f;
+  --color-intess-dark: #0f2a52;
+  --color-intess-light: #e8f0fa;
+  --color-intess-accent: #0e7490;
+
+  /* Capa semántica — notas */
+  --color-aprobado: #16a34a;
+  --color-aprobado-bg: #dcfce7;
+  --color-riesgo: #d97706;
+  --color-riesgo-bg: #fef3c7;
+  --color-reprobado: #dc2626;
+  --color-reprobado-bg: #fee2e2;
+
+  /* Capa semántica — disciplina */
+  --color-leve: #ca8a04;
+  --color-leve-bg: #fef9c3;
+  --color-grave: #ea580c;
+  --color-grave-bg: #ffedd5;
+  --color-muy-grave: #b91c1c;
+  --color-muy-grave-bg: #fee2e2;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #334155; /* slate-700 */
+}
+
+.dark {
+  --background: #0f172a; /* slate-900 */
+  --foreground: #e2e8f0; /* slate-200 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
