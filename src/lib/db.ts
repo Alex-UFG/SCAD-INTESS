@@ -10,6 +10,7 @@ export const db =
     user: process.env.DB_USER ?? "root",
     password: process.env.DB_PASSWORD ?? "",
     database: process.env.DB_NAME ?? "scad_intess",
+    ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true } : undefined,
     connectionLimit: 10,
     timezone: "Z",
   });
