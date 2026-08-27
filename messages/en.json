@@ -11,6 +11,106 @@
     "account": "Account",
     "role": "Role"
   },
+  "menu": {
+    "open": "Open menu",
+    "close": "Close menu",
+    "sections": {
+      "inicio": "Home",
+      "academico": "Academics",
+      "evaluacion": "Grading",
+      "asistencia": "Attendance",
+      "disciplina": "Discipline",
+      "comunicacion": "Communication",
+      "reportes": "Reports",
+      "administracion": "Administration"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "estudiantes": "Students",
+      "matriculas": "Enrollment",
+      "secciones": "Sections & subjects",
+      "ciclos": "School years",
+      "notas": "Grades",
+      "periodos": "Grading periods",
+      "boletas": "Report cards",
+      "paseLista": "Roll call",
+      "resumenAsistencia": "Attendance summary",
+      "incidencias": "Incidents",
+      "citaciones": "Guardian summons",
+      "notificaciones": "Notifications",
+      "tutores": "Guardians",
+      "reportes": "Reports & export",
+      "usuarios": "Users & requests",
+      "rolesPermisos": "Roles & permissions",
+      "auditoria": "Audit log"
+    }
+  },
+  "placeholder": {
+    "title": "Module under construction",
+    "text": "This section will be available soon. The data structure already exists in the database."
+  },
+  "dash": {
+    "welcome": "Welcome, {name}",
+    "subtitle": "Overview of the 2026 school year",
+    "stats": {
+      "estudiantes": "Students",
+      "docentes": "Teachers",
+      "matriculas": "Enrollments",
+      "incidencias": "Incidents"
+    },
+    "attendanceTitle": "Today's attendance",
+    "attendanceEmpty": "No attendance records yet. Data will appear here once the roll-call module is built.",
+    "quickTitle": "Quick actions",
+    "quick": {
+      "paseLista": "Take attendance",
+      "notas": "Enter grades",
+      "incidencia": "Report incident",
+      "reportes": "Generate report"
+    },
+    "incidentsTitle": "Recent incidents",
+    "incidentsEmpty": "No incidents recorded. The most recent ones will appear here."
+  },
+  "usuarios": {
+    "title": "Users & requests",
+    "subtitle": "Approve access requests, assign roles, and manage account status.",
+    "pendingTitle": "Pending requests",
+    "pendingEmpty": "No requests awaiting approval.",
+    "allTitle": "All users",
+    "colUser": "User",
+    "colRol": "Role",
+    "colEstado": "Status",
+    "colAcceso": "Last sign-in",
+    "colAcciones": "Actions",
+    "approve": "Approve",
+    "block": "Block",
+    "unblock": "Unblock",
+    "saveRol": "Save",
+    "you": "You",
+    "estados": {
+      "Activo": "Active",
+      "Inactivo": "Pending",
+      "Bloqueado": "Blocked"
+    }
+  },
+  "roles": {
+    "title": "Roles & permissions",
+    "subtitle": "Review the system roles and adjust which permissions each one has.",
+    "matrixTitle": "Permission matrix",
+    "adminLocked": "The Admin role always keeps every permission.",
+    "permiso": "Permission"
+  },
+  "cuenta": {
+    "title": "My account",
+    "subtitle": "Your profile information and preferences.",
+    "profileTitle": "Profile",
+    "nombre": "Name",
+    "email": "Institutional email",
+    "rol": "Role",
+    "prefsTitle": "Preferences",
+    "prefsText": "Theme and language are changed from the top bar and saved to your account automatically for any device.",
+    "passwordTitle": "Change password",
+    "passwordSoon": "Coming soon."
+  },
   "auth": {
     "loginTitle": "Welcome back",
     "loginSubtitle": "Enter your institutional credentials to continue.",

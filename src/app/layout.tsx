@@ -34,7 +34,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
           <Providers>
-            <AppHeader locale={locale} isAuthenticated={Boolean(session)} />
+            <AppHeader
+              locale={locale}
+              isAuthenticated={Boolean(session)}
+              userName={session?.user.name ?? null}
+              userEmail={session?.user.email ?? null}
+            />
             <main className="flex flex-1 flex-col">{children}</main>
           </Providers>
         </NextIntlClientProvider>

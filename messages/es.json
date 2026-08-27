@@ -11,6 +11,106 @@
     "account": "Cuenta",
     "role": "Rol"
   },
+  "menu": {
+    "open": "Abrir menú",
+    "close": "Cerrar menú",
+    "sections": {
+      "inicio": "Inicio",
+      "academico": "Académico",
+      "evaluacion": "Evaluación",
+      "asistencia": "Asistencia",
+      "disciplina": "Disciplina",
+      "comunicacion": "Comunicación",
+      "reportes": "Reportes",
+      "administracion": "Administración"
+    },
+    "items": {
+      "dashboard": "Panel principal",
+      "estudiantes": "Estudiantes",
+      "matriculas": "Matrículas",
+      "secciones": "Secciones y materias",
+      "ciclos": "Ciclos escolares",
+      "notas": "Notas",
+      "periodos": "Períodos evaluativos",
+      "boletas": "Boletas de notas",
+      "paseLista": "Pase de lista",
+      "resumenAsistencia": "Resumen de asistencia",
+      "incidencias": "Incidencias",
+      "citaciones": "Citaciones",
+      "notificaciones": "Notificaciones",
+      "tutores": "Tutores y encargados",
+      "reportes": "Reportes y exportar",
+      "usuarios": "Usuarios y solicitudes",
+      "rolesPermisos": "Roles y permisos",
+      "auditoria": "Auditoría"
+    }
+  },
+  "placeholder": {
+    "title": "Módulo en construcción",
+    "text": "Esta sección estará disponible próximamente. La estructura de datos ya existe en la base de datos."
+  },
+  "dash": {
+    "welcome": "Bienvenido, {name}",
+    "subtitle": "Resumen general del ciclo escolar 2026",
+    "stats": {
+      "estudiantes": "Estudiantes",
+      "docentes": "Docentes",
+      "matriculas": "Matrículas",
+      "incidencias": "Incidencias"
+    },
+    "attendanceTitle": "Asistencia de hoy",
+    "attendanceEmpty": "Sin registros de asistencia todavía. Los datos aparecerán aquí cuando se construya el módulo de pase de lista.",
+    "quickTitle": "Accesos rápidos",
+    "quick": {
+      "paseLista": "Tomar asistencia",
+      "notas": "Registrar notas",
+      "incidencia": "Reportar incidencia",
+      "reportes": "Generar reporte"
+    },
+    "incidentsTitle": "Incidencias recientes",
+    "incidentsEmpty": "Sin incidencias registradas. Las más recientes aparecerán aquí."
+  },
+  "usuarios": {
+    "title": "Usuarios y solicitudes",
+    "subtitle": "Aprueba solicitudes de acceso, asigna roles y gestiona el estado de las cuentas.",
+    "pendingTitle": "Solicitudes pendientes",
+    "pendingEmpty": "No hay solicitudes pendientes de aprobación.",
+    "allTitle": "Todos los usuarios",
+    "colUser": "Usuario",
+    "colRol": "Rol",
+    "colEstado": "Estado",
+    "colAcceso": "Último acceso",
+    "colAcciones": "Acciones",
+    "approve": "Aprobar",
+    "block": "Bloquear",
+    "unblock": "Desbloquear",
+    "saveRol": "Guardar",
+    "you": "Tú",
+    "estados": {
+      "Activo": "Activo",
+      "Inactivo": "Pendiente",
+      "Bloqueado": "Bloqueado"
+    }
+  },
+  "roles": {
+    "title": "Roles y permisos",
+    "subtitle": "Consulta los roles del sistema y ajusta qué permisos tiene cada uno.",
+    "matrixTitle": "Matriz de permisos",
+    "adminLocked": "El rol Admin conserva siempre todos los permisos.",
+    "permiso": "Permiso"
+  },
+  "cuenta": {
+    "title": "Mi cuenta",
+    "subtitle": "Tu información de perfil y preferencias.",
+    "profileTitle": "Perfil",
+    "nombre": "Nombre",
+    "email": "Correo institucional",
+    "rol": "Rol",
+    "prefsTitle": "Preferencias",
+    "prefsText": "El tema y el idioma se cambian desde la barra superior y se guardan automáticamente en tu cuenta para cualquier dispositivo.",
+    "passwordTitle": "Cambiar contraseña",
+    "passwordSoon": "Disponible próximamente."
+  },
   "auth": {
     "loginTitle": "Bienvenido de nuevo",
     "loginSubtitle": "Ingresa tus credenciales institucionales para continuar.",

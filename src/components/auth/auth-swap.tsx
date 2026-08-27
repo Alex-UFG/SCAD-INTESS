@@ -173,7 +173,7 @@ export function AuthSwap() {
   const loginActive = mode === "login";
 
   return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden bg-slate-50 px-4 py-10 dark:bg-slate-950">
+    <div className="relative flex min-h-[calc(100dvh-4rem)] items-center justify-center overflow-hidden bg-slate-50 px-4 py-6 md:py-10 dark:bg-slate-950">
       {/* Luces decorativas de fondo */}
       <div
         aria-hidden="true"
@@ -187,18 +187,18 @@ export function AuthSwap() {
       <div className="relative w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200/80 bg-white/80 shadow-2xl backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/80">
         <div
           className={`flex w-[200%] transition-transform duration-500 ease-in-out ${
-            loginActive ? "translate-x-0" : "-translate-x-1/2"
+            loginActive ? "translate-x-0" : "max-md:translate-x-0 md:-translate-x-1/2"
           }`}
         >
           {/* ============ PANEL: LOGIN ============ */}
           <section
-            className="flex w-1/2 shrink-0"
+            className={`w-1/2 shrink-0 ${loginActive ? "flex" : "hidden md:flex"}`}
             aria-hidden={!loginActive}
             inert={!loginActive}
           >
             <div className="grid flex-1 md:grid-cols-2">
               {/* Formulario de login */}
-              <div className="flex flex-col justify-center p-8 md:p-12">
+              <div className="flex flex-col justify-center p-6 sm:p-8 md:p-12">
                 <h1 className="text-2xl font-bold text-intess-dark dark:text-slate-100">
                   {t("loginTitle")}
                 </h1>
@@ -305,7 +305,7 @@ export function AuthSwap() {
               </div>
 
               {/* Panel promocional → solicitud de acceso */}
-              <div className="hidden flex-col items-center justify-center gap-4 bg-gradient-to-br from-intess-dark via-intess to-intess-accent p-8 text-center text-white md:flex md:p-12">
+              <div className="hidden flex-col items-center justify-center gap-4 bg-linear-to-br from-intess-dark via-intess to-intess-accent p-8 text-center text-white md:flex md:p-12">
                 <h2 className="text-2xl font-bold">{t("toRegisterTitle")}</h2>
                 <p className="max-w-xs text-sm text-white/85">
                   {t("toRegisterText")}
@@ -323,13 +323,13 @@ export function AuthSwap() {
 
           {/* ============ PANEL: SOLICITUD DE ACCESO ============ */}
           <section
-            className="flex w-1/2 shrink-0"
+            className={`w-1/2 shrink-0 ${loginActive ? "hidden md:flex" : "flex"}`}
             aria-hidden={loginActive}
             inert={loginActive}
           >
             <div className="grid flex-1 md:grid-cols-2">
               {/* Panel promocional → login */}
-              <div className="hidden flex-col items-center justify-center gap-4 bg-gradient-to-br from-intess-accent via-intess to-intess-dark p-8 text-center text-white md:flex md:p-12">
+              <div className="hidden flex-col items-center justify-center gap-4 bg-linear-to-br from-intess-accent via-intess to-intess-dark p-8 text-center text-white md:flex md:p-12">
                 <h2 className="text-2xl font-bold">{t("toLoginTitle")}</h2>
                 <p className="max-w-xs text-sm text-white/85">
                   {t("toLoginText")}
@@ -344,7 +344,7 @@ export function AuthSwap() {
               </div>
 
               {/* Formulario de solicitud */}
-              <div className="flex flex-col justify-center p-8 md:p-12">
+              <div className="flex flex-col justify-center p-6 sm:p-8 md:p-12">
                 <h1 className="text-2xl font-bold text-intess-dark dark:text-slate-100">
                   {t("registerTitle")}
                 </h1>

@@ -7,13 +7,22 @@ import { useTranslations } from "next-intl";
 import { setLocaleAction } from "@/app/actions/locale";
 import { setThemeAction } from "@/app/actions/theme";
 import { locales, type Locale } from "@/i18n/config";
+import { BrandMark } from "@/components/layout/brand-mark";
+import { UserMenu } from "@/components/layout/user-menu";
 
 interface AppHeaderProps {
   locale: string;
   isAuthenticated: boolean;
+  userName?: string | null;
+  userEmail?: string | null;
 }
 
-export function AppHeader({ locale, isAuthenticated }: AppHeaderProps) {
+export function AppHeader({
+  locale,
+  isAuthenticated,
+  userName = null,
+  userEmail = null,
+}: AppHeaderProps) {
   const t = useTranslations("ui");
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -44,9 +53,7 @@ export function AppHeader({ locale, isAuthenticated }: AppHeaderProps) {
           href={isAuthenticated ? "/dashboard" : "/auth"}
           className="flex items-center gap-3"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-intess text-sm font-bold text-white">
-            SI
-          </span>
+          <BrandMark className="h-9 w-9" />
           <span className="leading-tight">
             <span className="block text-sm font-semibold text-intess-dark dark:text-slate-100">
               {t("appName")}
@@ -116,6 +123,8 @@ export function AppHeader({ locale, isAuthenticated }: AppHeaderProps) {
               </svg>
             )}
           </button>
+
+          {isAuthenticated && <UserMenu name={userName} email={userEmail} />}
         </div>
       </div>
     </header>
