@@ -16,3 +16,10 @@ export const db =
   });
 
 if (process.env.NODE_ENV !== "production") globalForDb.dbPool = db;
+
+/**Obtiene una conex exclusiva del pool e inicia las transacciones de mysql */
+export async function getTransaction(){
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+    return connection;
+}
