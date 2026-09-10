@@ -4,8 +4,9 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function FichaTutorPage({ params }: { params: { dui: string } }) {
-  const dui = params.dui;
+export default async function FichaTutorPage({ params }: { params: Promise<{ dui: string }> }) {
+  const resolvedParams = await params;
+  const dui = resolvedParams.dui;
   const tutor = await getTutorPorDui(dui);
 
   if (!tutor) return notFound();

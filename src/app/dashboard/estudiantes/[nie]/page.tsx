@@ -5,8 +5,9 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ExpedienteEstudiantePage({ params }: { params: { nie: string } }) {
-  const nie = parseInt(params.nie);
+export default async function ExpedienteEstudiantePage({ params }: { params: Promise<{ nie: string }> }) {
+  const resolvedParams = await params;
+  const nie = parseInt(resolvedParams.nie);
   if (isNaN(nie)) return notFound();
 
   const [estudiante, matriculas] = await Promise.all([
