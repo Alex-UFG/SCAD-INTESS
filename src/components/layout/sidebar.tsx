@@ -12,6 +12,7 @@ interface MenuItem {
   href: string;
   roles: number[];
   icon: ReactNode;
+  label?: string; // Etiqueta de respaldo si la traducción aún no está en messages/es.json
 }
 
 interface MenuSection {
@@ -56,6 +57,69 @@ const SECTIONS: MenuSection[] = [
     key: "academico",
     items: [
       {
+        key: "ciclos",
+        href: "/dashboard/ciclos",
+        roles: [1, 2, 3, 4],
+        label: "Ciclos Escolares",
+        icon: (
+          <Icon>
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M8 3v4M16 3v4M3 10h18" />
+          </Icon>
+        ),
+      },
+      {
+        key: "materias",
+        href: "/dashboard/materias",
+        roles: [1, 2, 3, 4],
+        label: "Especialidades y Materias",
+        icon: (
+          <Icon>
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+          </Icon>
+        ),
+      },
+      {
+        key: "secciones",
+        href: "/dashboard/secciones",
+        roles: [1, 2, 3, 4],
+        label: "Secciones",
+        icon: (
+          <Icon>
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5z" />
+            <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20" />
+          </Icon>
+        ),
+      },
+      {
+        key: "docentes",
+        href: "/dashboard/docentes/completar-perfil",
+        roles: [1, 2, 3, 4, 5],
+        label: "Perfil Docente",
+        icon: (
+          <Icon>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </Icon>
+        ),
+      },
+      {
+        key: "cargas",
+        href: "/dashboard/cargas",
+        roles: [1, 2, 3],
+        label: "Carga Académica",
+        icon: (
+          <Icon>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <rect x="8" y="2" width="8" height="4" rx="1" />
+            <path d="m9 14 2 2 4-4" />
+          </Icon>
+        ),
+      },
+      {
         key: "estudiantes",
         href: "/dashboard/estudiantes",
         roles: [1, 2, 3, 4],
@@ -75,28 +139,6 @@ const SECTIONS: MenuSection[] = [
           <Icon>
             <rect x="5" y="4" width="14" height="17" rx="2" />
             <path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h4" />
-          </Icon>
-        ),
-      },
-      {
-        key: "secciones",
-        href: "/dashboard/secciones",
-        roles: [1, 2, 3, 4],
-        icon: (
-          <Icon>
-            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5z" />
-            <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20" />
-          </Icon>
-        ),
-      },
-      {
-        key: "ciclos",
-        href: "/dashboard/ciclos",
-        roles: [1, 2, 3, 4],
-        icon: (
-          <Icon>
-            <rect x="3" y="5" width="18" height="16" rx="2" />
-            <path d="M8 3v4M16 3v4M3 10h18" />
           </Icon>
         ),
       },
@@ -281,6 +323,17 @@ function MenuEntry({ item, active }: { item: MenuItem; active: boolean }) {
   const base =
     "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
 
+  // Busca la traducción; si aún no existe en el JSON, usa la propiedad label como respaldo seguro
+  let labelText = item.label || item.key;
+  try {
+    const translated = t(item.key);
+    if (translated && !translated.startsWith("menu.items.")) {
+      labelText = translated;
+    }
+  } catch {
+    // Si la clave no está en el catálogo, usa el fallback sin romper la app
+  }
+
   return (
     <Link
       href={item.href}
@@ -292,7 +345,7 @@ function MenuEntry({ item, active }: { item: MenuItem; active: boolean }) {
       }`}
     >
       {item.icon}
-      <span className="flex-1 truncate text-left">{t(item.key)}</span>
+      <span className="flex-1 truncate text-left">{labelText}</span>
     </Link>
   );
 }
