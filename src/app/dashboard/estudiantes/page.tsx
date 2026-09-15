@@ -1,4 +1,6 @@
 import { getEstudiantes } from '@/app/actions/estudiantes';
+import { nombreCompleto } from '@/lib/format';
+import { EstadoEstudianteBadge } from '@/components/ui/estado-badge';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -31,16 +33,10 @@ export default async function EstudiantesPage() {
                 <tr key={est.nie} className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <td className="p-4 text-sm text-gray-900 dark:text-gray-300">{est.nie}</td>
                   <td className="p-4 text-sm text-gray-900 dark:text-gray-300">
-                    {est.primer_nombre} {est.segundo_nombre} {est.primer_apellido} {est.segundo_apellido}
+                    {nombreCompleto(est)}
                   </td>
                   <td className="p-4 text-sm">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      est.estado === 'Activo' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                      est.estado === 'Egresado' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
-                      {est.estado}
-                    </span>
+                    <EstadoEstudianteBadge estado={est.estado} />
                   </td>
                   <td className="p-4 text-sm">
                     <Link href={`/dashboard/estudiantes/${est.nie}`} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline">

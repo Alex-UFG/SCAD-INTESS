@@ -1,5 +1,10 @@
 import { getEstudiantePorNie } from '@/app/actions/estudiantes';
-import { getMatriculasPorEstudiante } from '@/app/actions/matriculas';
+import { getMatriculasPorEstudiante, getCiclosAbiertos, getSecciones } from '@/app/actions/matriculas';
+import { getTutores } from '@/app/actions/tutores';
+import { nombreCompleto, formatFecha } from '@/lib/format';
+import { EstadoEstudianteBadge } from '@/components/ui/estado-badge';
+import { VincularTutorModal } from '@/components/estudiantes/vincular-tutor-modal';
+import { MatricularModal } from '@/components/estudiantes/matricular-modal';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -7,12 +12,16 @@ export const dynamic = 'force-dynamic';
 
 export default async function ExpedienteEstudiantePage({ params }: { params: Promise<{ nie: string }> }) {
   const resolvedParams = await params;
+  // parseInt solo no basta: '123abc' resolveria al estudiante 123
+  if (!/^\d+$/.test(resolvedParams.nie)) return notFound();
   const nie = parseInt(resolvedParams.nie);
-  if (isNaN(nie)) return notFound();
 
-  const [estudiante, matriculas] = await Promise.all([
+  const [estudiante, matriculas, tutores, ciclos, secciones] = await Promise.all([
     getEstudiantePorNie(nie),
-    getMatriculasPorEstudiante(nie)
+    getMatriculasPorEstudiante(nie),
+    getTutores(),
+    getCiclosAbiertos(),
+    getSecciones(),
   ]);
 
   if (!estudiante) return notFound();
@@ -27,12 +36,17 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Expediente del Estudiante</h1>
         </div>
         <div className="flex gap-2">
-          {/* Action buttons could go here */}
+          <Link
+            href={`/dashboard/estudiantes/${nie}/editar`}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            Editar
+          </Link>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Datos Personales */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
@@ -46,14 +60,12 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Nombre Completo</p>
-                <p className="font-medium text-gray-900 dark:text-gray-200">
-                  {estudiante.primer_nombre} {estudiante.segundo_nombre} {estudiante.primer_apellido} {estudiante.segundo_apellido}
-                </p>
+                <p className="font-medium text-gray-900 dark:text-gray-200">{nombreCompleto(estudiante)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Fecha de Nacimiento</p>
                 <p className="font-medium text-gray-900 dark:text-gray-200">
-                  {new Date(estudiante.fecha_nacimiento).toLocaleDateString()}
+                  {formatFecha(estudiante.fecha_nacimiento)}
                 </p>
               </div>
               <div>
@@ -64,13 +76,9 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Estado</p>
-                <span className={`inline-block mt-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  estudiante.estado === 'Activo' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                  estudiante.estado === 'Egresado' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                }`}>
-                  {estudiante.estado}
-                </span>
+                <div className="mt-1">
+                  <EstadoEstudianteBadge estado={estudiante.estado} />
+                </div>
               </div>
             </div>
           </div>
@@ -78,26 +86,23 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
 
         {/* Tutores y Matriculas */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Tutores */}
           <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
             <div className="flex justify-between items-center border-b pb-2 mb-4 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 Tutores y Responsables
               </h2>
-              {/* Botón para abrir modal de vincular tutor */}
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                + Vincular Tutor
-              </button>
+              <VincularTutorModal nie={nie} tutores={tutores} />
             </div>
-            
+
             {estudiante.tutores && estudiante.tutores.length > 0 ? (
               <div className="space-y-4">
                 {estudiante.tutores.map(tutor => (
                   <div key={tutor.dui_tutor} className="flex justify-between items-start p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-100 dark:border-gray-800">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-gray-200">
-                        {tutor.primer_nombre} {tutor.primer_apellido} 
+                        {tutor.primer_nombre} {tutor.primer_apellido}
                         {tutor.pivot.contacto_principal && (
                           <span className="ml-2 bg-yellow-100 text-yellow-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Principal</span>
                         )}
@@ -119,11 +124,9 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 Historial de Matrículas
               </h2>
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                + Matricular
-              </button>
+              <MatricularModal nie={nie} ciclos={ciclos} secciones={secciones} />
             </div>
-            
+
             {matriculas && matriculas.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">

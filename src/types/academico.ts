@@ -25,6 +25,10 @@ export interface Seccion {
   capacidad_max: number;
 }
 
+export interface SeccionConEspecialidad extends Seccion {
+  especialidad_nombre: string;
+}
+
 export interface Matricula {
   id_matricula: number;
   nie: number;

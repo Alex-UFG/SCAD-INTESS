@@ -1,9 +1,10 @@
 'use server';
 
-import { db, getTransaction } from '@/lib/db';
+import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Tutor } from '@/types/persona';
 import { TutorFormData, EstudianteTutorFormData, tutorSchema, estudianteTutorSchema } from '@/lib/validations/tutor';
+import { requireSession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 
 export async function getTutores(): Promise<Tutor[]> {
@@ -28,39 +29,46 @@ export async function getTutorPorDui(dui_tutor: string): Promise<Tutor | null> {
 }
 
 export async function createTutor(data: TutorFormData) {
+  const session = await requireSession();
+  if (!session) {
+    return { success: false, error: 'Usuario no autenticado.' };
+  }
+
   const parsed = tutorSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, errors: parsed.error.flatten().fieldErrors };
+    return { success: false, error: 'Revisa los campos del formulario.', errors: parsed.error.flatten().fieldErrors };
   }
 
   try {
     const { dui_tutor, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, telefono_principal, telefono_alterno, email, ocupacion } = parsed.data;
 
-    // revisa if DUI existe
-    const [existing] = await db.query<RowDataPacket[]>('SELECT dui_tutor FROM tutor WHERE dui_tutor = ?', [dui_tutor]);
-    if (existing.length > 0) {
-      return { success: false, error: 'Ya existe un tutor con este DUI.' };
-    }
-
     await db.execute<ResultSetHeader>(
-      `INSERT INTO tutor 
-        (dui_tutor, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, telefono_principal, telefono_alterno, email, ocupacion) 
+      `INSERT INTO tutor
+        (dui_tutor, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, telefono_principal, telefono_alterno, email, ocupacion)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [dui_tutor, primer_nombre, segundo_nombre ?? null, primer_apellido, segundo_apellido ?? null, telefono_principal, telefono_alterno ?? null, email ?? null, ocupacion ?? null]
+      [dui_tutor, primer_nombre, segundo_nombre || null, primer_apellido, segundo_apellido || null, telefono_principal, telefono_alterno || null, email || null, ocupacion || null]
     );
 
     revalidatePath('/dashboard/tutores');
     return { success: true, dui_tutor };
   } catch (error) {
+    if (isDuplicateEntry(error)) {
+      return { success: false, error: 'Ya existe un tutor con este DUI.' };
+    }
     console.error('Error creating tutor:', error);
     return { success: false, error: 'Ocurrió un error al crear el tutor.' };
   }
 }
 
 export async function vincularEstudianteTutor(data: EstudianteTutorFormData) {
+  const session = await requireSession();
+  if (!session) {
+    return { success: false, error: 'Usuario no autenticado.' };
+  }
+
   const parsed = estudianteTutorSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, errors: parsed.error.flatten().fieldErrors };
+    return { success: false, error: 'Revisa los campos del formulario.', errors: parsed.error.flatten().fieldErrors };
   }
 
   const connection = await getTransaction();
@@ -68,19 +76,44 @@ export async function vincularEstudianteTutor(data: EstudianteTutorFormData) {
   try {
     const { nie, dui_tutor, parentesco, contacto_principal } = parsed.data;
 
+    // bloquea la fila del estudiante: serializa vinculaciones concurrentes
+    // del mismo estudiante para que no queden dos contactos principales
+    const [estudianteRows] = await connection.query<RowDataPacket[]>(
+      'SELECT nie FROM estudiante WHERE nie = ? FOR UPDATE',
+      [nie]
+    );
+    if (estudianteRows.length === 0) {
+      await connection.rollback();
+      return { success: false, error: 'El estudiante no existe.' };
+    }
+
     if (contacto_principal) {
       await connection.execute(
-        'UPDATE estudiante_tutor SET contacto_principal = 0 WHERE nie = ?',
-        [nie]
+        'UPDATE estudiante_tutor SET contacto_principal = 0 WHERE nie = ? AND contacto_principal = 1 AND dui_tutor <> ?',
+        [nie, dui_tutor]
       );
     }
 
     await connection.execute<ResultSetHeader>(
-      `INSERT INTO estudiante_tutor (nie, dui_tutor, parentesco, contacto_principal) 
+      `INSERT INTO estudiante_tutor (nie, dui_tutor, parentesco, contacto_principal)
        VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE parentesco = ?, contacto_principal = ?`,
       [nie, dui_tutor, parentesco, contacto_principal ? 1 : 0, parentesco, contacto_principal ? 1 : 0]
     );
+
+    // el estudiante debe conservar al menos un contacto principal
+    if (!contacto_principal) {
+      const [principales] = await connection.query<RowDataPacket[]>(
+        'SELECT 1 FROM estudiante_tutor WHERE nie = ? AND contacto_principal = 1 LIMIT 1',
+        [nie]
+      );
+      if (principales.length === 0) {
+        await connection.execute(
+          'UPDATE estudiante_tutor SET contacto_principal = 1 WHERE nie = ? AND dui_tutor = ?',
+          [nie, dui_tutor]
+        );
+      }
+    }
 
     await connection.commit();
     revalidatePath(`/dashboard/estudiantes/${nie}`);

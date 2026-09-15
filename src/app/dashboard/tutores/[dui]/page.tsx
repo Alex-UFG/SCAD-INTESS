@@ -1,4 +1,5 @@
 import { getTutorPorDui } from '@/app/actions/tutores';
+import { nombreCompleto } from '@/lib/format';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
@@ -31,9 +32,7 @@ export default async function FichaTutorPage({ params }: { params: Promise<{ dui
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Nombre Completo</p>
-            <p className="font-medium text-gray-900 dark:text-gray-200">
-              {tutor.primer_nombre} {tutor.segundo_nombre} {tutor.primer_apellido} {tutor.segundo_apellido}
-            </p>
+            <p className="font-medium text-gray-900 dark:text-gray-200">{nombreCompleto(tutor)}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Teléfono Principal</p>

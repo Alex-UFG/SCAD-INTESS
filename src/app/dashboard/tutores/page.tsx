@@ -1,4 +1,5 @@
 import { getTutores } from '@/app/actions/tutores';
+import { nombreCompleto } from '@/lib/format';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,7 @@ export default async function TutoresPage() {
                 <tr key={tutor.dui_tutor} className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                   <td className="p-4 text-sm text-gray-900 dark:text-gray-300 font-mono">{tutor.dui_tutor}</td>
                   <td className="p-4 text-sm text-gray-900 dark:text-gray-300">
-                    {tutor.primer_nombre} {tutor.segundo_nombre} {tutor.primer_apellido} {tutor.segundo_apellido}
+                    {nombreCompleto(tutor)}
                   </td>
                   <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
                     <div>{tutor.telefono_principal}</div>

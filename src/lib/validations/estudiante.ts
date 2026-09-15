@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { fechaISO } from './shared';
 
 export const estudianteSchema = z.object({
   nie: z.coerce.number().int().positive("El NIE debe ser un número positivo"),
@@ -6,9 +7,7 @@ export const estudianteSchema = z.object({
   segundo_nombre: z.string().max(50).nullable().optional(),
   primer_apellido: z.string().min(1, "El primer apellido es requerido").max(50),
   segundo_apellido: z.string().max(50).nullable().optional(),
-  fecha_nacimiento: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Fecha de nacimiento inválida",
-  }),
+  fecha_nacimiento: fechaISO("Fecha de nacimiento inválida"),
   genero: z.enum(['M', 'F'], { message: "Seleccione un género" }),
   direccion: z.string().max(200).nullable().optional(),
   estado: z.enum(['Activo', 'Inactivo', 'Retirado', 'Egresado']).default('Activo'),
