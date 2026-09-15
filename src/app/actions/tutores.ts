@@ -31,12 +31,12 @@ export async function getTutorPorDui(dui_tutor: string): Promise<Tutor | null> {
 export async function createTutor(data: TutorFormData) {
   const session = await requireSession();
   if (!session) {
-    return { success: false, error: 'Usuario no autenticado.' };
+    return { success: false, error: 'notAuthenticated' };
   }
 
   const parsed = tutorSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, error: 'Revisa los campos del formulario.', errors: parsed.error.flatten().fieldErrors };
+    return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
   try {
@@ -53,22 +53,22 @@ export async function createTutor(data: TutorFormData) {
     return { success: true, dui_tutor };
   } catch (error) {
     if (isDuplicateEntry(error)) {
-      return { success: false, error: 'Ya existe un tutor con este DUI.' };
+      return { success: false, error: 'duiDuplicado' };
     }
     console.error('Error creating tutor:', error);
-    return { success: false, error: 'Ocurrió un error al crear el tutor.' };
+    return { success: false, error: 'createError' };
   }
 }
 
 export async function vincularEstudianteTutor(data: EstudianteTutorFormData) {
   const session = await requireSession();
   if (!session) {
-    return { success: false, error: 'Usuario no autenticado.' };
+    return { success: false, error: 'notAuthenticated' };
   }
 
   const parsed = estudianteTutorSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, error: 'Revisa los campos del formulario.', errors: parsed.error.flatten().fieldErrors };
+    return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
   const connection = await getTransaction();
@@ -84,7 +84,7 @@ export async function vincularEstudianteTutor(data: EstudianteTutorFormData) {
     );
     if (estudianteRows.length === 0) {
       await connection.rollback();
-      return { success: false, error: 'El estudiante no existe.' };
+      return { success: false, error: 'estudianteNoExiste' };
     }
 
     if (contacto_principal) {
@@ -121,7 +121,7 @@ export async function vincularEstudianteTutor(data: EstudianteTutorFormData) {
   } catch (error) {
     await connection.rollback();
     console.error('Error linking tutor:', error);
-    return { success: false, error: 'Ocurrió un error al vincular el tutor.' };
+    return { success: false, error: 'vincularError' };
   } finally {
     connection.release();
   }

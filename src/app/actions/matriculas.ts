@@ -61,12 +61,12 @@ export async function getSecciones(): Promise<SeccionConEspecialidad[]> {
 export async function matricularEstudiante(data: MatriculaFormData) {
   const parsed = matriculaSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, error: 'Revisa los campos del formulario.', errors: parsed.error.flatten().fieldErrors };
+    return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
   const session = await requireSession();
   if (!session) {
-    return { success: false, error: 'Usuario no autenticado.' };
+    return { success: false, error: 'notAuthenticated' };
   }
 
   const id_usuario = parseInt(session.user.id);
@@ -86,7 +86,7 @@ export async function matricularEstudiante(data: MatriculaFormData) {
 
     if (seccionInfo.length === 0) {
       await connection.rollback();
-      return { success: false, error: 'La sección no existe.' };
+      return { success: false, error: 'seccionNoExiste' };
     }
 
     const [countMatriculados] = await connection.query<RowDataPacket[]>(
@@ -96,7 +96,7 @@ export async function matricularEstudiante(data: MatriculaFormData) {
 
     if (countMatriculados[0].total >= seccionInfo[0].capacidad_max) {
       await connection.rollback();
-      return { success: false, error: 'La sección ha alcanzado su capacidad máxima.' };
+      return { success: false, error: 'capacidadMaxima' };
     }
 
     // 2. Crear matrícula. La unicidad por ciclo la garantiza el índice
@@ -114,10 +114,10 @@ export async function matricularEstudiante(data: MatriculaFormData) {
   } catch (error) {
     await connection.rollback();
     if (isDuplicateEntry(error)) {
-      return { success: false, error: 'El estudiante ya está matriculado en este ciclo escolar.' };
+      return { success: false, error: 'yaMatriculado' };
     }
     console.error('Error matriculando estudiante:', error);
-    return { success: false, error: 'Ocurrió un error al matricular al estudiante.' };
+    return { success: false, error: 'matricularError' };
   } finally {
     connection.release();
   }

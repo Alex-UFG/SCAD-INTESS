@@ -8,15 +8,16 @@ export const submitButtonClass =
 
 interface FormFieldProps {
   label: string;
+  required?: boolean;
   error?: string;
   children: ReactNode;
 }
 
 /**Bloque label + control + mensaje de error usado por todos los formularios */
-export function FormField({ label, error, children }: FormFieldProps) {
+export function FormField({ label, required, error, children }: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}{required ? ' *' : ''}</label>
       {children}
       {error && <p className="text-red-500 text-xs">{error}</p>}
     </div>

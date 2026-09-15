@@ -1,24 +1,32 @@
 import { z } from 'zod';
+import { Traductor, claveComoMensaje } from './shared';
 
-export const tutorSchema = z.object({
-  dui_tutor: z.string().regex(/^\d{8}-\d$/, "Formato de DUI inválido (ej: 00000000-0)"),
-  primer_nombre: z.string().min(1, "El primer nombre es requerido").max(50),
-  segundo_nombre: z.string().max(50).nullable().optional(),
-  primer_apellido: z.string().min(1, "El primer apellido es requerido").max(50),
-  segundo_apellido: z.string().max(50).nullable().optional(),
-  telefono_principal: z.string().min(8, "El teléfono principal es requerido").max(15),
-  telefono_alterno: z.string().max(15).nullable().optional(),
-  email: z.string().email("Correo electrónico inválido").max(100).nullable().optional().or(z.literal('')),
-  ocupacion: z.string().max(100).nullable().optional(),
-});
+/**t recibe claves del namespace `tutores.errors` (ver estudiante.ts) */
+export const createTutorSchema = (t: Traductor = claveComoMensaje) =>
+  z.object({
+    dui_tutor: z.string().regex(/^\d{8}-\d$/, t('duiInvalido')),
+    primer_nombre: z.string().min(1, t('primerNombreRequerido')).max(50),
+    segundo_nombre: z.string().max(50).nullable().optional(),
+    primer_apellido: z.string().min(1, t('primerApellidoRequerido')).max(50),
+    segundo_apellido: z.string().max(50).nullable().optional(),
+    telefono_principal: z.string().min(8, t('telefonoRequerido')).max(15),
+    telefono_alterno: z.string().max(15).nullable().optional(),
+    email: z.string().email(t('emailInvalido')).max(100).nullable().optional().or(z.literal('')),
+    ocupacion: z.string().max(100).nullable().optional(),
+  });
 
+export const tutorSchema = createTutorSchema();
 export type TutorFormData = z.infer<typeof tutorSchema>;
 
-export const estudianteTutorSchema = z.object({
-  nie: z.coerce.number().int().positive(),
-  dui_tutor: z.string().regex(/^\d{8}-\d$/),
-  parentesco: z.enum(['Padre', 'Madre', 'Abuelo', 'Abuela', 'Tio', 'Tia', 'Hermano', 'Hermana', 'Encargado']),
-  contacto_principal: z.boolean().default(false),
-});
+export const createEstudianteTutorSchema = (t: Traductor = claveComoMensaje) =>
+  z.object({
+    nie: z.coerce.number().int().positive(),
+    dui_tutor: z.string().regex(/^\d{8}-\d$/, t('seleccioneTutor')),
+    parentesco: z.enum(['Padre', 'Madre', 'Abuelo', 'Abuela', 'Tio', 'Tia', 'Hermano', 'Hermana', 'Encargado'], {
+      message: t('parentescoRequerido'),
+    }),
+    contacto_principal: z.boolean().default(false),
+  });
 
+export const estudianteTutorSchema = createEstudianteTutorSchema();
 export type EstudianteTutorFormData = z.infer<typeof estudianteTutorSchema>;

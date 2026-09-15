@@ -18,10 +18,10 @@ export function nombreCompleto(persona: ConNombre): string {
 }
 
 /**
- * Formatea una fecha de columna DATE. El pool usa timezone 'Z', asi que mysql2
- * entrega la fecha como medianoche UTC; se formatea en UTC para no mostrar el
- * dia anterior en servidores al oeste de UTC.
+ * Formatea una fecha de columna DATE en el locale activo. El pool usa timezone
+ * 'Z', asi que mysql2 entrega la fecha como medianoche UTC; se formatea en UTC
+ * para no mostrar el dia anterior en servidores al oeste de UTC.
  */
-export function formatFecha(fecha: Date | string): string {
-  return new Date(fecha).toLocaleDateString('es-SV', { timeZone: 'UTC' });
+export function formatFecha(fecha: Date | string, locale: string): string {
+  return new Date(fecha).toLocaleDateString(locale, { timeZone: 'UTC' });
 }

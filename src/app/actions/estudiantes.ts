@@ -51,12 +51,12 @@ export async function getEstudiantePorNie(nie: number): Promise<EstudianteConTut
 export async function createEstudiante(data: EstudianteFormData) {
   const session = await requireSession();
   if (!session) {
-    return { success: false, error: 'Usuario no autenticado.' };
+    return { success: false, error: 'notAuthenticated' };
   }
 
   const parsed = estudianteSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, error: 'Revisa los campos del formulario.', errors: parsed.error.flatten().fieldErrors };
+    return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
   try {
@@ -74,22 +74,22 @@ export async function createEstudiante(data: EstudianteFormData) {
   } catch (error) {
     // la PK sobre nie es la fuente de verdad: un pre-SELECT tendria carrera
     if (isDuplicateEntry(error)) {
-      return { success: false, error: 'Ya existe un estudiante con este NIE.' };
+      return { success: false, error: 'nieDuplicado' };
     }
     console.error('Error creating estudiante:', error);
-    return { success: false, error: 'Ocurrió un error al crear el estudiante.' };
+    return { success: false, error: 'createError' };
   }
 }
 
 export async function updateEstudiante(nie: number, data: EstudianteFormData) {
   const session = await requireSession();
   if (!session) {
-    return { success: false, error: 'Usuario no autenticado.' };
+    return { success: false, error: 'notAuthenticated' };
   }
 
   const parsed = estudianteSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, error: 'Revisa los campos del formulario.', errors: parsed.error.flatten().fieldErrors };
+    return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
   try {
@@ -108,6 +108,6 @@ export async function updateEstudiante(nie: number, data: EstudianteFormData) {
     return { success: true };
   } catch (error) {
     console.error('Error updating estudiante:', error);
-    return { success: false, error: 'Ocurrió un error al actualizar el estudiante.' };
+    return { success: false, error: 'updateError' };
   }
 }

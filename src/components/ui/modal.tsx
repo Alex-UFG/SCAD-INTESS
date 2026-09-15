@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ModalProps {
   title: string;
@@ -10,6 +11,8 @@ interface ModalProps {
 }
 
 export function Modal({ title, open, onClose, children }: ModalProps) {
+  const t = useTranslations('common');
+
   if (!open) return null;
 
   return (
@@ -21,7 +24,7 @@ export function Modal({ title, open, onClose, children }: ModalProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label={t('close')}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
             ✕

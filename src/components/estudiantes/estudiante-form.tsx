@@ -2,11 +2,12 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
-import { estudianteSchema, EstudianteFormData } from '@/lib/validations/estudiante';
+import { createEstudianteSchema, estudianteSchema, EstudianteFormData } from '@/lib/validations/estudiante';
 import { createEstudiante, updateEstudiante } from '@/app/actions/estudiantes';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FormField, ServerErrorBanner, inputClass, submitButtonClass } from '@/components/ui/form-field';
 
 type EstudianteFormInput = z.input<typeof estudianteSchema>;
@@ -18,12 +19,16 @@ interface EstudianteFormProps {
 }
 
 export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
+  const t = useTranslations('estudiantes');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const esEdicion = nie !== undefined;
 
+  const schema = useMemo(() => createEstudianteSchema((key) => t(`errors.${key}`)), [t]);
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<EstudianteFormInput, unknown, EstudianteFormData>({
-    resolver: zodResolver(estudianteSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       estado: 'Activo',
       genero: 'M',
@@ -39,7 +44,7 @@ export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
       router.push(esEdicion ? `/dashboard/estudiantes/${nie}` : '/dashboard/estudiantes');
       router.refresh();
     } else {
-      setServerError(result.error || 'Revisa los campos del formulario.');
+      setServerError(t(`errors.${result.error ?? 'checkFields'}`));
     }
   };
 
@@ -50,54 +55,54 @@ export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <FormField label="NIE *" error={errors.nie?.message}>
+          <FormField label={t('nie')} required error={errors.nie?.message}>
             <input type="number" readOnly={esEdicion} {...register('nie')} className={`${inputClass} ${esEdicion ? 'opacity-60 cursor-not-allowed' : ''}`} />
           </FormField>
 
-          <FormField label="Fecha de Nacimiento *" error={errors.fecha_nacimiento?.message}>
+          <FormField label={t('fechaNacimiento')} required error={errors.fecha_nacimiento?.message}>
             <input type="date" {...register('fecha_nacimiento')} className={inputClass} />
           </FormField>
 
-          <FormField label="Primer Nombre *" error={errors.primer_nombre?.message}>
+          <FormField label={t('primerNombre')} required error={errors.primer_nombre?.message}>
             <input type="text" {...register('primer_nombre')} className={inputClass} />
           </FormField>
 
-          <FormField label="Segundo Nombre" error={errors.segundo_nombre?.message}>
+          <FormField label={t('segundoNombre')} error={errors.segundo_nombre?.message}>
             <input type="text" {...register('segundo_nombre')} className={inputClass} />
           </FormField>
 
-          <FormField label="Primer Apellido *" error={errors.primer_apellido?.message}>
+          <FormField label={t('primerApellido')} required error={errors.primer_apellido?.message}>
             <input type="text" {...register('primer_apellido')} className={inputClass} />
           </FormField>
 
-          <FormField label="Segundo Apellido" error={errors.segundo_apellido?.message}>
+          <FormField label={t('segundoApellido')} error={errors.segundo_apellido?.message}>
             <input type="text" {...register('segundo_apellido')} className={inputClass} />
           </FormField>
 
-          <FormField label="Género *" error={errors.genero?.message}>
+          <FormField label={t('genero')} required error={errors.genero?.message}>
             <select {...register('genero')} className={inputClass}>
-              <option value="M">Masculino</option>
-              <option value="F">Femenino</option>
+              <option value="M">{t('generos.M')}</option>
+              <option value="F">{t('generos.F')}</option>
             </select>
           </FormField>
 
-          <FormField label="Estado *" error={errors.estado?.message}>
+          <FormField label={t('estado')} required error={errors.estado?.message}>
             <select {...register('estado')} className={inputClass}>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-              <option value="Retirado">Retirado</option>
-              <option value="Egresado">Egresado</option>
+              <option value="Activo">{t('estados.Activo')}</option>
+              <option value="Inactivo">{t('estados.Inactivo')}</option>
+              <option value="Retirado">{t('estados.Retirado')}</option>
+              <option value="Egresado">{t('estados.Egresado')}</option>
             </select>
           </FormField>
         </div>
 
-        <FormField label="Dirección" error={errors.direccion?.message}>
+        <FormField label={t('direccion')} error={errors.direccion?.message}>
           <textarea {...register('direccion')} rows={3} className={inputClass} />
         </FormField>
 
         <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
           <button type="submit" disabled={isSubmitting} className={submitButtonClass}>
-            {isSubmitting ? 'Guardando...' : esEdicion ? 'Guardar Cambios' : 'Guardar Estudiante'}
+            {isSubmitting ? tCommon('saving') : esEdicion ? t('guardarCambios') : t('guardar')}
           </button>
         </div>
       </form>

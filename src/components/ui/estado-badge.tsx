@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { EstadoEstudiante } from '@/types/persona';
 
 const badgeBase = 'px-2.5 py-1 rounded-full text-xs font-semibold';
@@ -10,5 +11,6 @@ const clasesEstadoEstudiante: Record<EstadoEstudiante, string> = {
 };
 
 export function EstadoEstudianteBadge({ estado }: { estado: EstadoEstudiante }) {
-  return <span className={`${badgeBase} ${clasesEstadoEstudiante[estado]}`}>{estado}</span>;
+  const t = useTranslations('estudiantes');
+  return <span className={`${badgeBase} ${clasesEstadoEstudiante[estado]}`}>{t(`estados.${estado}`)}</span>;
 }
