@@ -34,8 +34,8 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <Link href="/dashboard/estudiantes" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
             ← {tCommon('back')}
           </Link>
@@ -95,7 +95,7 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
 
           {/* Tutores */}
           <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-            <div className="flex justify-between items-center border-b pb-2 mb-4 dark:border-gray-800">
+            <div className="flex flex-wrap justify-between items-center gap-2 border-b pb-2 mb-4 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 {t('tutoresTitle')}
               </h2>
@@ -126,7 +126,7 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
 
           {/* Historial de Matriculas */}
           <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-            <div className="flex justify-between items-center border-b pb-2 mb-4 dark:border-gray-800">
+            <div className="flex flex-wrap justify-between items-center gap-2 border-b pb-2 mb-4 dark:border-gray-800">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 {tMatriculas('historialTitle')}
               </h2>

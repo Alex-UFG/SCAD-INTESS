@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { signOutAction } from "@/app/actions/auth";
 
@@ -20,9 +20,33 @@ function initialsOf(name: string | null, email: string | null): string {
 export function UserMenu({ name, email }: UserMenuProps) {
   const t = useTranslations("ui");
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: PointerEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -35,16 +59,10 @@ export function UserMenu({ name, email }: UserMenuProps) {
       </button>
 
       {open && (
-        <>
-          <div
-            aria-hidden="true"
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40"
-          />
-          <div
-            role="menu"
-            className="absolute right-0 top-11 z-50 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
-          >
+        <div
+          role="menu"
+          className="absolute right-0 top-11 z-50 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+        >
             <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
               <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {name ?? email}
@@ -97,8 +115,7 @@ export function UserMenu({ name, email }: UserMenuProps) {
                 {t("signOut")}
               </button>
             </form>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

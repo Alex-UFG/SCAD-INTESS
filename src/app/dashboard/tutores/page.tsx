@@ -11,7 +11,7 @@ export default async function TutoresPage() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('title')}</h1>
         <Link href="/dashboard/tutores/nuevo" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
           {t('new')}

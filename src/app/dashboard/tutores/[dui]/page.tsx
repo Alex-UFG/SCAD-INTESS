@@ -20,7 +20,7 @@ export default async function FichaTutorPage({ params }: { params: Promise<{ dui
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-6">
         <Link href="/dashboard/tutores" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
           ← {tCommon('back')}
         </Link>
