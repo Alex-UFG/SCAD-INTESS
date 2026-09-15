@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { loginAction, registerAction } from "@/app/actions/auth";
+import { setThemeAction } from "@/app/actions/theme";
 
 type Mode = "login" | "register";
 
@@ -82,7 +83,7 @@ function PasswordToggle({
 export function AuthSwap() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const [mode, setMode] = useState<Mode>("login");
   const [authError, setAuthError] = useState<string | null>(null);
@@ -149,8 +150,11 @@ export function AuthSwap() {
     setNotice(null);
     const result = await loginAction(values);
     if (result.ok) {
-      // Preferencia de tema guardada en BD: se aplica al entrar.
-      if (result.theme) setTheme(result.theme);
+      if (theme === "light" || theme === "dark") {
+        if (theme !== result.theme) void setThemeAction(theme);
+      } else if (result.theme) {
+        setTheme(result.theme);
+      }
       router.push("/dashboard");
       router.refresh();
       return;
