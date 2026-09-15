@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
+import { isLocale, LOCALE_COOKIE, LOCALE_CHOSEN_COOKIE } from "@/i18n/config";
 import { savePreference } from "@/lib/preferences";
 
 export async function setLocaleAction(locale: string): Promise<void> {
@@ -19,6 +19,12 @@ export async function setLocaleAction(locale: string): Promise<void> {
   const session = await auth();
   if (session?.user?.id) {
     await savePreference(Number(session.user.id), "idioma", locale);
+  } else {
+    store.set(LOCALE_CHOSEN_COOKIE, "1", {
+      path: "/",
+      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+    });
   }
 
   revalidatePath("/", "layout");

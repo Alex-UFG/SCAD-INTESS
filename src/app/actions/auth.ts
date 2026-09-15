@@ -7,8 +7,8 @@ import { z } from "zod";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { signIn, signOut } from "@/auth";
 import { db } from "@/lib/db";
-import { getPreferences } from "@/lib/preferences";
-import { isLocale, LOCALE_COOKIE } from "@/i18n/config";
+import { getPreferences, savePreference } from "@/lib/preferences";
+import { isLocale, LOCALE_COOKIE, LOCALE_CHOSEN_COOKIE } from "@/i18n/config";
 
 // Rol por defecto para solicitudes de acceso (5 = Docente en 002_seed.sql);
 // un Admin aprueba la cuenta (estado -> 'Activo') y ajusta el rol definitivo.
@@ -79,15 +79,25 @@ export async function loginAction(input: unknown): Promise<LoginResult> {
   );
   let theme: string | undefined;
   if (rows[0]) {
+    const store = await cookies();
     const prefs = await getPreferences(rows[0].id_usuario);
-    if (prefs.idioma && isLocale(prefs.idioma)) {
-      const store = await cookies();
+    const cookieLocale = store.get(LOCALE_COOKIE)?.value;
+    const eligioIdiomaEnLogin =
+      store.get(LOCALE_CHOSEN_COOKIE)?.value === "1" &&
+      cookieLocale !== undefined &&
+      isLocale(cookieLocale);
+
+    if (eligioIdiomaEnLogin) {
+      await savePreference(rows[0].id_usuario, "idioma", cookieLocale);
+    } else if (prefs.idioma && isLocale(prefs.idioma)) {
       store.set(LOCALE_COOKIE, prefs.idioma, {
         path: "/",
         maxAge: 60 * 60 * 24 * 365,
         sameSite: "lax",
       });
     }
+    store.delete(LOCALE_CHOSEN_COOKIE);
+
     if (prefs.tema === "dark" || prefs.tema === "light") theme = prefs.tema;
   }
 
