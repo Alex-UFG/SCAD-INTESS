@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useSyncExternalStore, useTransition } from "react";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { setLocaleAction } from "@/app/actions/locale";
@@ -9,6 +9,14 @@ import { setThemeAction } from "@/app/actions/theme";
 import { locales, type Locale } from "@/i18n/config";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { UserMenu } from "@/components/layout/user-menu";
+
+const subscribeNoop = () => () => {};
+const useMounted = () =>
+  useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
 
 interface AppHeaderProps {
   locale: string;
@@ -25,10 +33,8 @@ export function AppHeader({
 }: AppHeaderProps) {
   const t = useTranslations("ui");
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [, startTransition] = useTransition();
-
-  useEffect(() => setMounted(true), []);
 
   const isDark = mounted && resolvedTheme === "dark";
 
@@ -48,7 +54,7 @@ export function AppHeader({
 
   return (
     <header className="sticky top-0 z-40 h-16 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-900/90">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="flex h-full w-full items-center justify-between gap-4 px-4 sm:px-6">
         <Link
           href={isAuthenticated ? "/dashboard" : "/auth"}
           className="flex items-center gap-3"
