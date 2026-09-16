@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { Traductor, claveComoMensaje } from './shared';
+import { Traductor, claveComoMensaje, DUI_REGEX } from './shared';
 
 /**t recibe claves del namespace `tutores.errors` (ver estudiante.ts) */
 export const createTutorSchema = (t: Traductor = claveComoMensaje) =>
   z.object({
-    dui_tutor: z.string().regex(/^\d{8}-\d$/, t('duiInvalido')),
+    dui_tutor: z.string().regex(DUI_REGEX, t('duiInvalido')),
     primer_nombre: z.string().min(1, t('primerNombreRequerido')).max(50),
     segundo_nombre: z.string().max(50).nullable().optional(),
     primer_apellido: z.string().min(1, t('primerApellidoRequerido')).max(50),
@@ -21,7 +21,7 @@ export type TutorFormData = z.infer<typeof tutorSchema>;
 export const createEstudianteTutorSchema = (t: Traductor = claveComoMensaje) =>
   z.object({
     nie: z.coerce.number().int().positive(),
-    dui_tutor: z.string().regex(/^\d{8}-\d$/, t('seleccioneTutor')),
+    dui_tutor: z.string().regex(DUI_REGEX, t('seleccioneTutor')),
     parentesco: z.enum(['Padre', 'Madre', 'Abuelo', 'Abuela', 'Tio', 'Tia', 'Hermano', 'Hermana', 'Encargado'], {
       message: t('parentescoRequerido'),
     }),

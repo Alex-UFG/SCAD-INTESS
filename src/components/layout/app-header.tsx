@@ -10,6 +10,7 @@ import { locales, type Locale } from "@/i18n/config";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { UserMenu } from "@/components/layout/user-menu";
 
+// Detector de hidratacion: false en SSR, true en el cliente, sin setState en efectos
 const subscribeNoop = () => () => {};
 const useMounted = () =>
   useSyncExternalStore(

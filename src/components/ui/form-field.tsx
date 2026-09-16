@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import type { ActionState } from '@/types/actions';
 
 export const inputClass =
   'w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
@@ -30,6 +31,17 @@ export function ServerErrorBanner({ message }: { message: string | null }) {
   return (
     <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800/30">
       {message}
+    </div>
+  );
+}
+
+/**Banner de resultado (exito o error) de una server action usada con useActionState */
+export function ActionMessageBanner({ state }: { state: ActionState }) {
+  if (!state.message) return null;
+  if (!state.success) return <ServerErrorBanner message={state.message} />;
+  return (
+    <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md border border-green-200 dark:border-green-800/30">
+      {state.message}
     </div>
   );
 }
