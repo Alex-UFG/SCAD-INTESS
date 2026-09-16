@@ -12,7 +12,6 @@ interface MenuItem {
   href: string;
   roles: number[];
   icon: ReactNode;
-  label?: string; // Etiqueta de respaldo si la traducción aún no está en messages/es.json
 }
 
 interface MenuSection {
@@ -60,7 +59,6 @@ const SECTIONS: MenuSection[] = [
         key: "ciclos",
         href: "/dashboard/ciclos",
         roles: [1, 2, 3, 4],
-        label: "Ciclos Escolares",
         icon: (
           <Icon>
             <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -72,7 +70,6 @@ const SECTIONS: MenuSection[] = [
         key: "materias",
         href: "/dashboard/materias",
         roles: [1, 2, 3, 4],
-        label: "Especialidades y Materias",
         icon: (
           <Icon>
             <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -84,7 +81,6 @@ const SECTIONS: MenuSection[] = [
         key: "secciones",
         href: "/dashboard/secciones",
         roles: [1, 2, 3, 4],
-        label: "Secciones",
         icon: (
           <Icon>
             <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5z" />
@@ -93,10 +89,10 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
+        // Solo rol 5 (Docente): la accion liga el perfil al id_usuario de la sesion
         key: "docentes",
         href: "/dashboard/docentes/completar-perfil",
-        roles: [1, 2, 3, 4, 5],
-        label: "Perfil Docente",
+        roles: [5],
         icon: (
           <Icon>
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -110,7 +106,6 @@ const SECTIONS: MenuSection[] = [
         key: "cargas",
         href: "/dashboard/cargas",
         roles: [1, 2, 3],
-        label: "Carga Académica",
         icon: (
           <Icon>
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
@@ -323,17 +318,6 @@ function MenuEntry({ item, active }: { item: MenuItem; active: boolean }) {
   const base =
     "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
 
-  // Busca la traducción; si aún no existe en el JSON, usa la propiedad label como respaldo seguro
-  let labelText = item.label || item.key;
-  try {
-    const translated = t(item.key);
-    if (translated && !translated.startsWith("menu.items.")) {
-      labelText = translated;
-    }
-  } catch {
-    // Si la clave no está en el catálogo, usa el fallback sin romper la app
-  }
-
   return (
     <Link
       href={item.href}
@@ -345,7 +329,7 @@ function MenuEntry({ item, active }: { item: MenuItem; active: boolean }) {
       }`}
     >
       {item.icon}
-      <span className="flex-1 truncate text-left">{labelText}</span>
+      <span className="flex-1 truncate text-left">{t(item.key)}</span>
     </Link>
   );
 }

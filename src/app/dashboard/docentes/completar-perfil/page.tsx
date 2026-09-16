@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { getEspecialidadesActivas } from '@/app/actions/docentes';
 import { FormCompletarPerfilDocente } from './form-docente';
 
 export const metadata = {
@@ -6,24 +6,12 @@ export const metadata = {
   description: 'Completar perfil docente para habilitar funciones académicas'
 };
 
-export default async function CompletarPerfilPage() {
-  // Obtenemos las especialidades activas desde la base de datos para llenar el select
-  let especialidades: Array<{ id_especialidad: number; nombre: string }> = [];
+export const dynamic = 'force-dynamic';
 
-  try {
-    const [rows]: any = await db.query(
-      'SELECT id_especialidad, nombre FROM especialidad WHERE activa = TRUE ORDER BY nombre ASC'
-    );
-    especialidades = rows || [];
-  } catch (error) {
-    // Si la tabla aún no tiene datos o no hay conexión inmediata, proveemos valores por defecto para previsualizar
-    especialidades = [
-      { id_especialidad: 1, nombre: 'Desarrollo de Software' },
-      { id_especialidad: 2, nombre: 'Administrativo Contable' },
-      { id_especialidad: 3, nombre: 'Atención Primaria en Salud' },
-      { id_especialidad: 4, nombre: 'Educación Media General' }
-    ];
-  }
+export default async function CompletarPerfilPage() {
+  // Sin fallback inventado: si la consulta falla, el error sube al error
+  // boundary en vez de mostrar especialidades falsas con IDs incorrectos.
+  const especialidades = await getEspecialidadesActivas();
 
   return (
     <div className="py-6 px-4 sm:px-6 lg:px-8">

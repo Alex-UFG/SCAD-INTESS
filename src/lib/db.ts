@@ -16,3 +16,25 @@ export const db =
   });
 
 if (process.env.NODE_ENV !== "production") globalForDb.dbPool = db;
+
+/**Obtiene una conexion exclusiva del pool e inicia una transaccion */
+export async function getTransaction() {
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+    } catch (error) {
+        // si beginTransaction falla la conexion debe volver al pool o se agota
+        connection.release();
+        throw error;
+    }
+    return connection;
+}
+
+/**Detecta violaciones de clave unica/primaria de MySQL (ER_DUP_ENTRY) */
+export function isDuplicateEntry(error: unknown): boolean {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        (error as { code?: string }).code === "ER_DUP_ENTRY"
+    );
+}

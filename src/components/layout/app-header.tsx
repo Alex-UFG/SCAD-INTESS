@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useSyncExternalStore, useTransition } from "react";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { setLocaleAction } from "@/app/actions/locale";
@@ -9,6 +9,15 @@ import { setThemeAction } from "@/app/actions/theme";
 import { locales, type Locale } from "@/i18n/config";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { UserMenu } from "@/components/layout/user-menu";
+
+// Detector de hidratacion: false en SSR, true en el cliente, sin setState en efectos
+const subscribeNoop = () => () => {};
+const useMounted = () =>
+  useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
 
 interface AppHeaderProps {
   locale: string;
@@ -25,10 +34,8 @@ export function AppHeader({
 }: AppHeaderProps) {
   const t = useTranslations("ui");
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [, startTransition] = useTransition();
-
-  useEffect(() => setMounted(true), []);
 
   const isDark = mounted && resolvedTheme === "dark";
 
