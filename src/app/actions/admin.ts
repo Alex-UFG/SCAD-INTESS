@@ -1,17 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/session";
 
 const ESTADOS = ["Activo", "Inactivo", "Bloqueado"] as const;
 type Estado = (typeof ESTADOS)[number];
-
-async function requireAdmin() {
-  const session = await auth();
-  if (!session || session.user.rol !== 1) return null;
-  return session;
-}
 
 export async function aprobarUsuarioAction(formData: FormData): Promise<void> {
   const session = await requireAdmin();

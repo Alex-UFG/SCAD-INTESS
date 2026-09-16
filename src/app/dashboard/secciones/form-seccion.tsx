@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { crearSeccion, type CicloEscolar } from '@/app/actions/secciones';
 import type { Especialidad } from '@/app/actions/docentes';
 import type { ActionState } from '@/types/actions';
-import { Field, ActionMessageBanner, inputClass } from '@/components/ui/form-field';
+import { FormField, ActionMessageBanner, inputClass, submitButtonClass } from '@/components/ui/form-field';
 
 interface FormNuevaSeccionProps {
   especialidades: Especialidad[];
@@ -37,51 +37,47 @@ export function FormNuevaSeccion({ especialidades, ciclos }: FormNuevaSeccionPro
 
           <form action={formAction} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Field label={t('ciclo')} error={state.errors?.id_ciclo?.[0]}>
+              <FormField label={t('ciclo')} error={state.errors?.id_ciclo?.[0]}>
                 <select name="id_ciclo" required defaultValue="" className={`${inputClass} bg-white dark:bg-slate-900`}>
                   <option value="" disabled>{t('seleccioneCiclo')}</option>
                   {ciclos.map((ciclo) => (
                     <option key={ciclo.id_ciclo} value={ciclo.id_ciclo}>{ciclo.anio}</option>
                   ))}
                 </select>
-              </Field>
+              </FormField>
 
-              <Field label={t('especialidad')} error={state.errors?.id_especialidad?.[0]}>
+              <FormField label={t('especialidad')} error={state.errors?.id_especialidad?.[0]}>
                 <select name="id_especialidad" required defaultValue="" className={`${inputClass} bg-white dark:bg-slate-900`}>
                   <option value="" disabled>{t('seleccioneEspecialidad')}</option>
                   {especialidades.map((esp) => (
                     <option key={esp.id_especialidad} value={esp.id_especialidad}>{esp.nombre}</option>
                   ))}
                 </select>
-              </Field>
+              </FormField>
 
-              <Field label={t('grado')} error={state.errors?.grado?.[0]}>
+              <FormField label={t('grado')} error={state.errors?.grado?.[0]}>
                 <select name="grado" required defaultValue="1" className={`${inputClass} bg-white dark:bg-slate-900`}>
                   <option value="1">1°</option>
                   <option value="2">2°</option>
                   <option value="3">3°</option>
                 </select>
-              </Field>
+              </FormField>
 
-              <Field label={t('nombre')} error={state.errors?.nombre?.[0]}>
+              <FormField label={t('nombre')} error={state.errors?.nombre?.[0]}>
                 <input type="text" name="nombre" placeholder="A" maxLength={10} required className={inputClass} />
-              </Field>
+              </FormField>
 
-              <Field label={t('docenteGuia')} error={state.errors?.dui_docente_guia?.[0]}>
+              <FormField label={t('docenteGuia')} error={state.errors?.dui_docente_guia?.[0]}>
                 <input type="text" name="dui_docente_guia" placeholder="00000000-0" maxLength={10} className={inputClass} />
-              </Field>
+              </FormField>
 
-              <Field label={t('capacidad')} error={state.errors?.capacidad_max?.[0]}>
+              <FormField label={t('capacidad')} error={state.errors?.capacidad_max?.[0]}>
                 <input type="number" name="capacidad_max" min={10} max={60} defaultValue={40} className={inputClass} />
-              </Field>
+              </FormField>
             </div>
 
             <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={isPending}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors disabled:opacity-50"
-              >
+              <button type="submit" disabled={isPending} className={submitButtonClass}>
                 {isPending ? t('guardando') : t('guardar')}
               </button>
             </div>

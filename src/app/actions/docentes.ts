@@ -7,7 +7,7 @@ import { RowDataPacket } from 'mysql2';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { requireSession } from '@/lib/session';
 import { registrarAuditoria } from '@/lib/audit';
-import { DUI_REGEX, TELEFONO_REGEX, FECHA_ISO_REGEX } from '@/lib/validation';
+import { DUI_REGEX, TELEFONO_REGEX, FECHA_ISO_REGEX } from '@/lib/validations/shared';
 import type { ActionState } from '@/types/actions';
 
 // Rol 5 = Docente (002_seed.sql). El perfil se liga al id_usuario de la sesion,

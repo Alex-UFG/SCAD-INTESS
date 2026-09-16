@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
 import { completarPerfilDocente, type Especialidad } from '@/app/actions/docentes';
 import type { ActionState } from '@/types/actions';
-import { Field, ActionMessageBanner, inputClass } from '@/components/ui/form-field';
+import { FormField, ActionMessageBanner, inputClass, submitButtonClass } from '@/components/ui/form-field';
 
 export function FormCompletarPerfilDocente({ especialidades }: { especialidades: Especialidad[] }) {
   const t = useTranslations('docentes');
@@ -28,31 +28,31 @@ export function FormCompletarPerfilDocente({ especialidades }: { especialidades:
       ) : (
         <form action={formAction} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Field label={t('dui')} error={state.errors?.dui_docente?.[0]}>
+            <FormField label={t('dui')} error={state.errors?.dui_docente?.[0]}>
               <input type="text" name="dui_docente" placeholder="01234567-8" maxLength={10} required className={inputClass} />
-            </Field>
+            </FormField>
 
-            <Field label={t('telefono')} error={state.errors?.telefono?.[0]}>
+            <FormField label={t('telefono')} error={state.errors?.telefono?.[0]}>
               <input type="text" name="telefono" placeholder="7000-0000" maxLength={9} required className={inputClass} />
-            </Field>
+            </FormField>
 
-            <Field label={t('primerNombre')} error={state.errors?.primer_nombre?.[0]}>
+            <FormField label={t('primerNombre')} error={state.errors?.primer_nombre?.[0]}>
               <input type="text" name="primer_nombre" required className={inputClass} />
-            </Field>
+            </FormField>
 
-            <Field label={t('segundoNombre')} error={state.errors?.segundo_nombre?.[0]}>
+            <FormField label={t('segundoNombre')} error={state.errors?.segundo_nombre?.[0]}>
               <input type="text" name="segundo_nombre" className={inputClass} />
-            </Field>
+            </FormField>
 
-            <Field label={t('primerApellido')} error={state.errors?.primer_apellido?.[0]}>
+            <FormField label={t('primerApellido')} error={state.errors?.primer_apellido?.[0]}>
               <input type="text" name="primer_apellido" required className={inputClass} />
-            </Field>
+            </FormField>
 
-            <Field label={t('segundoApellido')} error={state.errors?.segundo_apellido?.[0]}>
+            <FormField label={t('segundoApellido')} error={state.errors?.segundo_apellido?.[0]}>
               <input type="text" name="segundo_apellido" className={inputClass} />
-            </Field>
+            </FormField>
 
-            <Field label={t('especialidad')} error={state.errors?.id_especialidad?.[0]}>
+            <FormField label={t('especialidad')} error={state.errors?.id_especialidad?.[0]}>
               <select
                 name="id_especialidad"
                 required
@@ -66,19 +66,15 @@ export function FormCompletarPerfilDocente({ especialidades }: { especialidades:
                   </option>
                 ))}
               </select>
-            </Field>
+            </FormField>
 
-            <Field label={t('fechaIngreso')} error={state.errors?.fecha_ingreso?.[0]}>
+            <FormField label={t('fechaIngreso')} error={state.errors?.fecha_ingreso?.[0]}>
               <input type="date" name="fecha_ingreso" required className={inputClass} />
-            </Field>
+            </FormField>
           </div>
 
           <div className="pt-4 flex justify-end">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors disabled:opacity-50"
-            >
+            <button type="submit" disabled={isPending} className={submitButtonClass}>
               {isPending ? t('guardando') : t('guardar')}
             </button>
           </div>

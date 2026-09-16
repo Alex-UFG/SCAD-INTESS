@@ -7,7 +7,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { requireSession } from '@/lib/session';
 import { registrarAuditoria } from '@/lib/audit';
-import { DUI_REGEX } from '@/lib/validation';
+import { DUI_REGEX } from '@/lib/validations/shared';
 import type { ActionState } from '@/types/actions';
 
 // Roles: 1 Admin, 2 Director, 3 Coordinador, 4 Secretaria (002_seed.sql);
