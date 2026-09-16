@@ -22,14 +22,14 @@ export function FormNuevaSeccion({ especialidades, ciclos }: FormNuevaSeccionPro
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="bg-intess hover:bg-intess/85 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
       >
         {open ? t('cerrar') : t('nueva')}
       </button>
 
       {open && (
-        <div className="w-full rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="text-sm font-semibold text-intess-dark dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+        <div className="w-full bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b pb-2 mb-4 dark:border-gray-800">
             {t('formTitle')}
           </h2>
 
@@ -38,7 +38,7 @@ export function FormNuevaSeccion({ especialidades, ciclos }: FormNuevaSeccionPro
           <form action={formAction} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label={t('ciclo')} error={state.errors?.id_ciclo?.[0]}>
-                <select name="id_ciclo" required defaultValue="" className={`${inputClass} bg-white dark:bg-slate-900`}>
+                <select name="id_ciclo" required defaultValue="" className={inputClass}>
                   <option value="" disabled>{t('seleccioneCiclo')}</option>
                   {ciclos.map((ciclo) => (
                     <option key={ciclo.id_ciclo} value={ciclo.id_ciclo}>{ciclo.anio}</option>
@@ -47,7 +47,7 @@ export function FormNuevaSeccion({ especialidades, ciclos }: FormNuevaSeccionPro
               </FormField>
 
               <FormField label={t('especialidad')} error={state.errors?.id_especialidad?.[0]}>
-                <select name="id_especialidad" required defaultValue="" className={`${inputClass} bg-white dark:bg-slate-900`}>
+                <select name="id_especialidad" required defaultValue="" className={inputClass}>
                   <option value="" disabled>{t('seleccioneEspecialidad')}</option>
                   {especialidades.map((esp) => (
                     <option key={esp.id_especialidad} value={esp.id_especialidad}>{esp.nombre}</option>
@@ -56,7 +56,7 @@ export function FormNuevaSeccion({ especialidades, ciclos }: FormNuevaSeccionPro
               </FormField>
 
               <FormField label={t('grado')} error={state.errors?.grado?.[0]}>
-                <select name="grado" required defaultValue="1" className={`${inputClass} bg-white dark:bg-slate-900`}>
+                <select name="grado" required defaultValue="1" className={inputClass}>
                   <option value="1">1°</option>
                   <option value="2">2°</option>
                   <option value="3">3°</option>
@@ -76,7 +76,7 @@ export function FormNuevaSeccion({ especialidades, ciclos }: FormNuevaSeccionPro
               </FormField>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
               <button type="submit" disabled={isPending} className={submitButtonClass}>
                 {isPending ? t('guardando') : t('guardar')}
               </button>

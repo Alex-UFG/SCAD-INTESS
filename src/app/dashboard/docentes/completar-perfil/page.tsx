@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { getEspecialidadesActivas } from '@/app/actions/docentes';
 import { FormCompletarPerfilDocente } from './form-docente';
 
@@ -9,12 +10,18 @@ export const metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function CompletarPerfilPage() {
-  // Sin fallback inventado: si la consulta falla, el error sube al error
-  // boundary en vez de mostrar especialidades falsas con IDs incorrectos.
-  const especialidades = await getEspecialidadesActivas();
+  const [t, especialidades] = await Promise.all([
+    getTranslations('docentes'),
+    getEspecialidadesActivas(),
+  ]);
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-2xl mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('formTitle')}</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('formSubtitle')}</p>
+      </div>
+
       <FormCompletarPerfilDocente especialidades={especialidades} />
     </div>
   );

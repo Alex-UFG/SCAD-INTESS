@@ -11,20 +11,11 @@ export function FormCompletarPerfilDocente({ especialidades }: { especialidades:
   const [state, formAction, isPending] = useActionState(completarPerfilDocente, {} as ActionState);
 
   return (
-    <div className="max-w-3xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 sm:p-8 shadow-sm">
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-5 mb-6">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-          {t('formTitle')}
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-          {t('formSubtitle')}
-        </p>
-      </div>
-
+    <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
       <ActionMessageBanner state={state} />
 
       {especialidades.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t('sinEspecialidades')}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('sinEspecialidades')}</p>
       ) : (
         <form action={formAction} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -53,12 +44,7 @@ export function FormCompletarPerfilDocente({ especialidades }: { especialidades:
             </FormField>
 
             <FormField label={t('especialidad')} error={state.errors?.id_especialidad?.[0]}>
-              <select
-                name="id_especialidad"
-                required
-                defaultValue=""
-                className={`${inputClass} bg-white dark:bg-slate-900`}
-              >
+              <select name="id_especialidad" required defaultValue="" className={inputClass}>
                 <option value="" disabled>{t('seleccioneEspecialidad')}</option>
                 {especialidades.map((esp) => (
                   <option key={esp.id_especialidad} value={esp.id_especialidad}>
@@ -73,7 +59,7 @@ export function FormCompletarPerfilDocente({ especialidades }: { especialidades:
             </FormField>
           </div>
 
-          <div className="pt-4 flex justify-end">
+          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
             <button type="submit" disabled={isPending} className={submitButtonClass}>
               {isPending ? t('guardando') : t('guardar')}
             </button>
