@@ -6,22 +6,14 @@ import { auth } from "@/auth";
 // Al construir un modulo real, crear su carpeta propia (gana sobre esta ruta
 // dinamica) y quitar su entrada de aqui.
 const MODULOS: Record<string, string> = {
-  estudiantes: "estudiantes",
-  matriculas: "matriculas",
-  materias: "materias",
-  ciclos: "ciclos",
-  cargas: "cargas",
   notas: "notas",
-  periodos: "periodos",
   boletas: "boletas",
   "pase-lista": "paseLista",
   asistencia: "resumenAsistencia",
   incidencias: "incidencias",
   citaciones: "citaciones",
   notificaciones: "notificaciones",
-  tutores: "tutores",
   reportes: "reportes",
-  auditoria: "auditoria",
 };
 
 export default async function ModuloPlaceholderPage({

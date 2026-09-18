@@ -277,12 +277,7 @@ export function AuthSwap() {
                       />
                       {t("remember")}
                     </label>
-                    <a
-                      href="#"
-                      className="font-medium text-intess hover:underline dark:text-intess-accent"
-                    >
-                      {t("forgot")}
-                    </a>
+                    {/* Gap 3: sin correo ni tokens, el reset lo hace el Admin desde Usuarios */}
                   </div>
 
                   <button

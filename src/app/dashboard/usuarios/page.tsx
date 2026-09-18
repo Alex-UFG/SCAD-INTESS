@@ -8,6 +8,7 @@ import {
   setEstadoUsuarioAction,
   setRolUsuarioAction,
 } from "@/app/actions/admin";
+import { ResetPasswordButton } from "./reset-password-button";
 
 interface UsuarioRow extends RowDataPacket {
   id_usuario: number;
@@ -191,6 +192,11 @@ export default async function UsuariosPage() {
                       {formatFecha(u.ultimo_acceso, "es-SV")}
                     </td>
                     <td className="px-5 py-3 text-right">
+                      {!esYo && (
+                        <span className="mr-2 inline-block">
+                          <ResetPasswordButton id={u.id_usuario} email={u.email} />
+                        </span>
+                      )}
                       {!esYo && (
                         <form action={setEstadoUsuarioAction} className="inline">
                           <input type="hidden" name="id" value={u.id_usuario} />
