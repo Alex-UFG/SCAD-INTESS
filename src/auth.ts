@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import type { RowDataPacket } from "mysql2";
 import { db } from "@/lib/db";
+import { registrarAuditoria } from "@/lib/audit";
 
 interface UsuarioRow extends RowDataPacket {
   id_usuario: number;
@@ -13,8 +14,13 @@ interface UsuarioRow extends RowDataPacket {
   nombre: string | null;
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET ?? "scad-intess-dev-secret-change-me",
+if (!process.env.AUTH_SECRET) {
+  throw new Error("AUTH_SECRET es obligatorio (genera uno con: npx auth secret)");
+}
+
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
+  secret: process.env.AUTH_SECRET,
+  // Vercel sirve tras proxy: se confia en el host de la peticion
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/auth" },
@@ -59,11 +65,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  events: {
+    async signIn({ user }) {
+      if (!user?.id) return;
+      await registrarAuditoria(db, {
+        idUsuario: Number(user.id),
+        tabla: "usuario",
+        idRegistro: user.id,
+        accion: "LOGIN",
+      });
+    },
+    async signOut(message) {
+      const token = (message as { token?: { id?: string } | null }).token;
+      if (!token?.id) return;
+      await registrarAuditoria(db, {
+        idUsuario: Number(token.id),
+        tabla: "usuario",
+        idRegistro: token.id,
+        accion: "LOGOUT",
+      });
+    },
+  },
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.rol = user.rol;
+      }
+      if (trigger === "update" && session?.user?.name) {
+        token.name = session.user.name;
       }
       return token;
     },

@@ -30,7 +30,6 @@ export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<EstudianteFormInput, unknown, EstudianteFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      estado: 'Activo',
       genero: 'M',
       ...defaultValues,
     },
@@ -86,14 +85,7 @@ export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
             </select>
           </FormField>
 
-          <FormField label={t('estado')} required error={errors.estado?.message}>
-            <select {...register('estado')} className={inputClass}>
-              <option value="Activo">{t('estados.Activo')}</option>
-              <option value="Inactivo">{t('estados.Inactivo')}</option>
-              <option value="Retirado">{t('estados.Retirado')}</option>
-              <option value="Egresado">{t('estados.Egresado')}</option>
-            </select>
-          </FormField>
+          {/* El estado se cambia desde el expediente (egreso, retiro por matricula) */}
         </div>
 
         <FormField label={t('direccion')} error={errors.direccion?.message}>

@@ -2,14 +2,22 @@ import mysql from "mysql2/promise";
 
 const globalForDb = globalThis as unknown as { dbPool?: mysql.Pool };
 
+// Sin valores por defecto para usuario/contrasena: un despliegue mal
+// configurado debe fallar en el arranque, no conectarse como root sin clave.
+for (const v of ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"] as const) {
+  if (process.env[v] === undefined) {
+    throw new Error(`Variable de entorno ${v} no definida (ver README, seccion Variables de entorno)`);
+  }
+}
+
 export const db =
   globalForDb.dbPool ??
   mysql.createPool({
-    host: process.env.DB_HOST ?? "localhost",
+    host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT ?? 3306),
-    user: process.env.DB_USER ?? "root",
-    password: process.env.DB_PASSWORD ?? "",
-    database: process.env.DB_NAME ?? "scad_intess",
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true } : undefined,
     connectionLimit: 10,
     timezone: "Z",
