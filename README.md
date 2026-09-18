@@ -53,11 +53,12 @@ cp .env.example .env.local
 ```
 
 ```env
-DATABASE_HOST=localhost
-DATABASE_PORT=3306
-DATABASE_USER=root
-DATABASE_PASSWORD=
-DATABASE_NAME=scad_intess
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=scad_intess
+DB_SSL=false             # true para TiDB Cloud
 AUTH_SECRET=        # generar con: npx auth secret
 AUTH_URL=http://localhost:3000
 ```
