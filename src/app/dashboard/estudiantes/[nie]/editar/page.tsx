@@ -38,7 +38,6 @@ export default async function EditarEstudiantePage({ params }: { params: Promise
           fecha_nacimiento: new Date(estudiante.fecha_nacimiento).toISOString().slice(0, 10),
           genero: estudiante.genero,
           direccion: estudiante.direccion ?? '',
-          estado: estudiante.estado,
         }}
       />
     </div>

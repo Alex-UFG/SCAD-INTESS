@@ -30,7 +30,7 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
   const schema = useMemo(() => createMatriculaSchema((key) => t(`errors.${key}`)), [t]);
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const valoresIniciales: Partial<MatriculaInput> = { nie, estado: 'Vigente', fecha_matricula: hoy };
+  const valoresIniciales: Partial<MatriculaInput> = { nie, fecha_matricula: hoy };
 
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<MatriculaInput, unknown, MatriculaFormData>({
     resolver: zodResolver(schema),
@@ -78,7 +78,6 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <input type="hidden" {...register('nie')} />
-            <input type="hidden" {...register('estado')} />
 
             <FormField label={t('cicloEscolar')} required error={errors.id_ciclo?.message}>
               <select {...register('id_ciclo')} defaultValue="" className={inputClass}>
