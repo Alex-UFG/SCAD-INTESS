@@ -135,5 +135,6 @@ export async function registerAction(input: unknown): Promise<RegisterResult> {
 }
 
 export async function signOutAction(): Promise<void> {
+  // LOGIN/LOGOUT se auditan en los eventos de next-auth (src/auth.ts)
   await signOut({ redirectTo: "/auth" });
 }

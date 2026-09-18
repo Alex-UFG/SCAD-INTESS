@@ -56,9 +56,10 @@ const SECTIONS: MenuSection[] = [
     key: "academico",
     items: [
       {
+        // config.ciclos en el seed: Admin y Director
         key: "ciclos",
         href: "/dashboard/ciclos",
-        roles: [1, 2, 3, 4],
+        roles: [1, 2],
         icon: (
           <Icon>
             <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -67,9 +68,10 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
+        // config.catalogos en el seed: Admin y Secretaria
         key: "materias",
         href: "/dashboard/materias",
-        roles: [1, 2, 3, 4],
+        roles: [1, 4],
         icon: (
           <Icon>
             <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -78,9 +80,10 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
+        // config.catalogos en el seed: Admin y Secretaria
         key: "secciones",
         href: "/dashboard/secciones",
-        roles: [1, 2, 3, 4],
+        roles: [1, 4],
         icon: (
           <Icon>
             <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5z" />
@@ -89,8 +92,22 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
-        // Solo rol 5 (Docente): la accion liga el perfil al id_usuario de la sesion
+        // Listado de docentes para quienes asignan carga o gestionan usuarios
         key: "docentes",
+        href: "/dashboard/docentes",
+        roles: [1, 2, 4],
+        icon: (
+          <Icon>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </Icon>
+        ),
+      },
+      {
+        // Solo rol 5 (Docente): la accion liga el perfil al id_usuario de la sesion
+        key: "miPerfilDocente",
         href: "/dashboard/docentes/completar-perfil",
         roles: [5],
         icon: (
@@ -103,9 +120,10 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
+        // config.carga en el seed: Admin, Director y Secretaria
         key: "cargas",
         href: "/dashboard/cargas",
-        roles: [1, 2, 3],
+        roles: [1, 2, 4],
         icon: (
           <Icon>
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
@@ -153,9 +171,10 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
+        // config.ciclos en el seed: Admin y Director
         key: "periodos",
         href: "/dashboard/periodos",
-        roles: [1, 2, 3],
+        roles: [1, 2],
         icon: (
           <Icon>
             <circle cx="12" cy="12" r="9" />
@@ -299,9 +318,10 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
+        // auditoria.ver en el seed: Admin y Director
         key: "auditoria",
         href: "/dashboard/auditoria",
-        roles: [1],
+        roles: [1, 2],
         icon: (
           <Icon>
             <circle cx="10.5" cy="10.5" r="6.5" />
