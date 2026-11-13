@@ -14,7 +14,17 @@
   "common": {
     "back": "Volver",
     "saving": "Guardando...",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "table": {
+      "search": "Buscar…",
+      "empty": "Sin registros.",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "page": "Página {page} de {total}",
+      "summary": "{from}–{to} de {total}"
+    }
   },
   "menu": {
     "open": "Abrir menú",
@@ -98,6 +108,26 @@
       "Activo": "Activo",
       "Inactivo": "Pendiente",
       "Bloqueado": "Bloqueado"
+    },
+    "empty": "No hay usuarios.",
+    "resetPassword": "Restablecer contraseña",
+    "blockTitle": "Bloquear cuenta",
+    "blockText": "La cuenta {email} no podrá iniciar sesión hasta que la desbloquees. ¿Continuar?",
+    "unblockTitle": "Desbloquear cuenta",
+    "unblockText": "La cuenta {email} volverá a poder iniciar sesión. ¿Continuar?",
+    "bloqueado": "Cuenta bloqueada.",
+    "desbloqueado": "Cuenta desbloqueada.",
+    "resetTitle": "Restablecer contraseña",
+    "resetText": "Se generará una contraseña temporal para {email}. La actual dejará de funcionar de inmediato. ¿Continuar?",
+    "resetDoneTitle": "Contraseña temporal generada",
+    "resetDoneText": "Entrega esta contraseña a {email}. Solo se muestra una vez.",
+    "resetDoneHint": "Al iniciar sesión se le pedirá cambiarla desde Mi cuenta.",
+    "errors": {
+      "sinPermiso": "No tienes permiso para esta acción.",
+      "invalido": "Solicitud inválida.",
+      "propiaCuenta": "No puedes aplicar esta acción a tu propia cuenta.",
+      "noExiste": "El usuario no existe.",
+      "errorServidor": "No se pudo completar la acción. Intenta de nuevo."
     }
   },
   "roles": {
@@ -349,7 +379,29 @@
     "prefsTitle": "Preferencias",
     "prefsText": "El tema y el idioma se cambian desde la barra superior y se guardan automáticamente en tu cuenta para cualquier dispositivo.",
     "passwordTitle": "Cambiar contraseña",
-    "passwordSoon": "Disponible próximamente."
+    "guardarNombre": "Guardar nombre",
+    "guardando": "Guardando…",
+    "nombreGuardado": "Nombre actualizado.",
+    "passwordActual": "Contraseña actual",
+    "passwordNueva": "Nueva contraseña",
+    "passwordConfirmar": "Confirmar nueva contraseña",
+    "passwordHint": "Mínimo 8 caracteres. Al cambiarla seguirás con la sesión abierta en este dispositivo.",
+    "passwordTemporal": "Un administrador te asignó una contraseña temporal. Cámbiala ahora por una propia.",
+    "guardarPassword": "Cambiar contraseña",
+    "passwordGuardada": "Contraseña actualizada.",
+    "errors": {
+      "noAutorizado": "Debes iniciar sesión.",
+      "revisarCampos": "Revisa los campos marcados.",
+      "errorServidor": "No se pudo guardar. Intenta de nuevo.",
+      "nombreMin": "El nombre debe tener al menos 2 caracteres.",
+      "nombreMax": "El nombre no puede superar 120 caracteres.",
+      "actualRequerida": "Ingresa tu contraseña actual.",
+      "actualIncorrecta": "La contraseña actual no es correcta.",
+      "passwordMin": "La nueva contraseña debe tener al menos 8 caracteres.",
+      "passwordMax": "La contraseña no puede superar 72 caracteres.",
+      "confirmMismatch": "Las contraseñas no coinciden.",
+      "passwordIgual": "La nueva contraseña debe ser distinta a la actual."
+    }
   },
   "auth": {
     "loginTitle": "Bienvenido de nuevo",
@@ -392,6 +444,36 @@
       "confirmMismatch": "Las contraseñas no coinciden.",
       "emailTaken": "Ya existe una cuenta con ese correo.",
       "registerFailed": "No se pudo enviar la solicitud. Intenta de nuevo."
-    }
+    },
+    "forgotHint": "El sistema no envía correos. Pide a un administrador que restablezca tu contraseña desde Usuarios y te entregue una temporal."
+  },
+  "auditoria": {
+    "title": "Auditoría",
+    "subtitle": "Bitácora de accesos y cambios registrados por el sistema.",
+    "filtroUsuario": "Usuario",
+    "filtroTabla": "Tabla",
+    "filtroAccion": "Acción",
+    "filtroDesde": "Desde",
+    "filtroHasta": "Hasta",
+    "todos": "Todos",
+    "todas": "Todas",
+    "filtrar": "Filtrar",
+    "limpiar": "Limpiar",
+    "resultados": "{total, plural, =0 {Sin registros} =1 {1 registro} other {# registros}}",
+    "colFecha": "Fecha y hora",
+    "colUsuario": "Usuario",
+    "colAccion": "Acción",
+    "colTabla": "Tabla",
+    "colRegistro": "Registro",
+    "colIp": "IP",
+    "colDatos": "Datos",
+    "verDatos": "Ver datos",
+    "antes": "Antes",
+    "despues": "Después",
+    "empty": "No hay registros con esos filtros.",
+    "rango": "{from}–{to} de {total}",
+    "pagina": "Página {page} de {total}",
+    "anterior": "Anterior",
+    "siguiente": "Siguiente"
   }
 }

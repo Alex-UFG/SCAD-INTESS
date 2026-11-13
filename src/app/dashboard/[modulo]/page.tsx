@@ -21,7 +21,6 @@ const MODULOS: Record<string, string> = {
   notificaciones: "notificaciones",
   tutores: "tutores",
   reportes: "reportes",
-  auditoria: "auditoria",
 };
 
 export default async function ModuloPlaceholderPage({

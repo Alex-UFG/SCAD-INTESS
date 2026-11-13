@@ -5,6 +5,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Tutor } from '@/types/persona';
 import { TutorFormData, EstudianteTutorFormData, tutorSchema, estudianteTutorSchema } from '@/lib/validations/tutor';
 import { requireSession } from '@/lib/session';
+import { registrarAuditoria } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
 
 export async function getTutores(): Promise<Tutor[]> {
@@ -39,24 +40,38 @@ export async function createTutor(data: TutorFormData) {
     return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
+  const connection = await getTransaction();
+
   try {
     const { dui_tutor, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, telefono_principal, telefono_alterno, email, ocupacion } = parsed.data;
 
-    await db.execute<ResultSetHeader>(
+    await connection.execute<ResultSetHeader>(
       `INSERT INTO tutor
         (dui_tutor, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, telefono_principal, telefono_alterno, email, ocupacion)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [dui_tutor, primer_nombre, segundo_nombre || null, primer_apellido, segundo_apellido || null, telefono_principal, telefono_alterno || null, email || null, ocupacion || null]
     );
 
+    await registrarAuditoria(connection, {
+      idUsuario: Number(session.user.id),
+      tabla: 'tutor',
+      idRegistro: dui_tutor,
+      accion: 'INSERT',
+      datos: parsed.data,
+    });
+
+    await connection.commit();
     revalidatePath('/dashboard/tutores');
     return { success: true, dui_tutor };
   } catch (error) {
+    await connection.rollback();
     if (isDuplicateEntry(error)) {
       return { success: false, error: 'duiDuplicado' };
     }
     console.error('Error creating tutor:', error);
     return { success: false, error: 'createError' };
+  } finally {
+    connection.release();
   }
 }
 
@@ -114,6 +129,14 @@ export async function vincularEstudianteTutor(data: EstudianteTutorFormData) {
         );
       }
     }
+
+    await registrarAuditoria(connection, {
+      idUsuario: Number(session.user.id),
+      tabla: 'estudiante_tutor',
+      idRegistro: `${nie}:${dui_tutor}`,
+      accion: 'INSERT',
+      datos: { nie, dui_tutor, parentesco, contacto_principal },
+    });
 
     await connection.commit();
     revalidatePath(`/dashboard/estudiantes/${nie}`);

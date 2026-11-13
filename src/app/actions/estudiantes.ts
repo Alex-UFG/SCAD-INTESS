@@ -1,10 +1,11 @@
 'use server';
 
-import { db, isDuplicateEntry } from '@/lib/db';
+import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Estudiante, EstudianteConTutores, Tutor } from '@/types/persona';
 import { EstudianteFormData, estudianteSchema } from '@/lib/validations/estudiante';
 import { requireSession } from '@/lib/session';
+import { registrarAuditoria } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
 
 export async function getEstudiantes(): Promise<Estudiante[]> {
@@ -59,25 +60,39 @@ export async function createEstudiante(data: EstudianteFormData) {
     return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
+  const connection = await getTransaction();
+
   try {
     const { nie, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado } = parsed.data;
 
-    await db.execute<ResultSetHeader>(
+    await connection.execute<ResultSetHeader>(
       `INSERT INTO estudiante
         (nie, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [nie, primer_nombre, segundo_nombre || null, primer_apellido, segundo_apellido || null, fecha_nacimiento, genero, direccion || null, estado]
     );
 
+    await registrarAuditoria(connection, {
+      idUsuario: Number(session.user.id),
+      tabla: 'estudiante',
+      idRegistro: nie,
+      accion: 'INSERT',
+      datos: parsed.data,
+    });
+
+    await connection.commit();
     revalidatePath('/dashboard/estudiantes');
     return { success: true, nie };
   } catch (error) {
+    await connection.rollback();
     // la PK sobre nie es la fuente de verdad: un pre-SELECT tendria carrera
     if (isDuplicateEntry(error)) {
       return { success: false, error: 'nieDuplicado' };
     }
     console.error('Error creating estudiante:', error);
     return { success: false, error: 'createError' };
+  } finally {
+    connection.release();
   }
 }
 
@@ -92,10 +107,17 @@ export async function updateEstudiante(nie: number, data: EstudianteFormData) {
     return { success: false, error: 'checkFields', errors: parsed.error.flatten().fieldErrors };
   }
 
+  const connection = await getTransaction();
+
   try {
     const { primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado } = parsed.data;
 
-    await db.execute<ResultSetHeader>(
+    const [previos] = await connection.query<RowDataPacket[]>(
+      'SELECT primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado FROM estudiante WHERE nie = ? FOR UPDATE',
+      [nie]
+    );
+
+    await connection.execute<ResultSetHeader>(
       `UPDATE estudiante
        SET primer_nombre = ?, segundo_nombre = ?, primer_apellido = ?, segundo_apellido = ?,
            fecha_nacimiento = ?, genero = ?, direccion = ?, estado = ?
@@ -103,11 +125,24 @@ export async function updateEstudiante(nie: number, data: EstudianteFormData) {
       [primer_nombre, segundo_nombre || null, primer_apellido, segundo_apellido || null, fecha_nacimiento, genero, direccion || null, estado, nie]
     );
 
+    await registrarAuditoria(connection, {
+      idUsuario: Number(session.user.id),
+      tabla: 'estudiante',
+      idRegistro: nie,
+      accion: 'UPDATE',
+      datosAnteriores: previos[0] ?? null,
+      datos: { primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado },
+    });
+
+    await connection.commit();
     revalidatePath('/dashboard/estudiantes');
     revalidatePath(`/dashboard/estudiantes/${nie}`);
     return { success: true };
   } catch (error) {
+    await connection.rollback();
     console.error('Error updating estudiante:', error);
     return { success: false, error: 'updateError' };
+  } finally {
+    connection.release();
   }
 }

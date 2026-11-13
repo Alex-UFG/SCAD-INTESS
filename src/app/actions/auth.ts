@@ -5,8 +5,9 @@ import { AuthError } from "next-auth";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import { db } from "@/lib/db";
+import { registrarAuditoria } from "@/lib/audit";
 import { getPreferences, savePreference } from "@/lib/preferences";
 import { isLocale, LOCALE_COOKIE, LOCALE_CHOSEN_COOKIE } from "@/i18n/config";
 
@@ -99,6 +100,13 @@ export async function loginAction(input: unknown): Promise<LoginResult> {
     store.delete(LOCALE_CHOSEN_COOKIE);
 
     if (prefs.tema === "dark" || prefs.tema === "light") theme = prefs.tema;
+
+    await registrarAuditoria(db, {
+      idUsuario: rows[0].id_usuario,
+      tabla: "usuario",
+      idRegistro: rows[0].id_usuario,
+      accion: "LOGIN",
+    }).catch((error) => console.error("Error auditando LOGIN:", error));
   }
 
   return { ok: true, theme };
@@ -135,5 +143,14 @@ export async function registerAction(input: unknown): Promise<RegisterResult> {
 }
 
 export async function signOutAction(): Promise<void> {
+  const session = await auth();
+  if (session?.user?.id) {
+    await registrarAuditoria(db, {
+      idUsuario: Number(session.user.id),
+      tabla: "usuario",
+      idRegistro: session.user.id,
+      accion: "LOGOUT",
+    }).catch((error) => console.error("Error auditando LOGOUT:", error));
+  }
   await signOut({ redirectTo: "/auth" });
 }

@@ -14,7 +14,17 @@
   "common": {
     "back": "Back",
     "saving": "Saving...",
-    "close": "Close"
+    "close": "Close",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "table": {
+      "search": "Search…",
+      "empty": "No records.",
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {total}",
+      "summary": "{from}–{to} of {total}"
+    }
   },
   "menu": {
     "open": "Open menu",
@@ -98,6 +108,26 @@
       "Activo": "Active",
       "Inactivo": "Pending",
       "Bloqueado": "Blocked"
+    },
+    "empty": "No users.",
+    "resetPassword": "Reset password",
+    "blockTitle": "Block account",
+    "blockText": "{email} will not be able to sign in until you unblock it. Continue?",
+    "unblockTitle": "Unblock account",
+    "unblockText": "{email} will be able to sign in again. Continue?",
+    "bloqueado": "Account blocked.",
+    "desbloqueado": "Account unblocked.",
+    "resetTitle": "Reset password",
+    "resetText": "A temporary password will be generated for {email}. The current one stops working immediately. Continue?",
+    "resetDoneTitle": "Temporary password generated",
+    "resetDoneText": "Hand this password to {email}. It is shown only once.",
+    "resetDoneHint": "They will be asked to change it from My account after signing in.",
+    "errors": {
+      "sinPermiso": "You do not have permission for this action.",
+      "invalido": "Invalid request.",
+      "propiaCuenta": "You cannot apply this action to your own account.",
+      "noExiste": "User does not exist.",
+      "errorServidor": "Could not complete the action. Try again."
     }
   },
   "roles": {
@@ -349,7 +379,29 @@
     "prefsTitle": "Preferences",
     "prefsText": "Theme and language are changed from the top bar and saved to your account automatically for any device.",
     "passwordTitle": "Change password",
-    "passwordSoon": "Coming soon."
+    "guardarNombre": "Save name",
+    "guardando": "Saving…",
+    "nombreGuardado": "Name updated.",
+    "passwordActual": "Current password",
+    "passwordNueva": "New password",
+    "passwordConfirmar": "Confirm new password",
+    "passwordHint": "At least 8 characters. You will stay signed in on this device after changing it.",
+    "passwordTemporal": "An administrator assigned you a temporary password. Change it now to one of your own.",
+    "guardarPassword": "Change password",
+    "passwordGuardada": "Password updated.",
+    "errors": {
+      "noAutorizado": "You must sign in.",
+      "revisarCampos": "Check the highlighted fields.",
+      "errorServidor": "Could not save. Try again.",
+      "nombreMin": "Name must be at least 2 characters.",
+      "nombreMax": "Name cannot exceed 120 characters.",
+      "actualRequerida": "Enter your current password.",
+      "actualIncorrecta": "Current password is incorrect.",
+      "passwordMin": "New password must be at least 8 characters.",
+      "passwordMax": "Password cannot exceed 72 characters.",
+      "confirmMismatch": "Passwords do not match.",
+      "passwordIgual": "New password must differ from the current one."
+    }
   },
   "auth": {
     "loginTitle": "Welcome back",
@@ -392,6 +444,36 @@
       "confirmMismatch": "Passwords do not match.",
       "emailTaken": "An account with that email already exists.",
       "registerFailed": "The request could not be sent. Try again."
-    }
+    },
+    "forgotHint": "The system does not send email. Ask an administrator to reset your password from Users and hand you a temporary one."
+  },
+  "auditoria": {
+    "title": "Audit log",
+    "subtitle": "Log of sign-ins and changes recorded by the system.",
+    "filtroUsuario": "User",
+    "filtroTabla": "Table",
+    "filtroAccion": "Action",
+    "filtroDesde": "From",
+    "filtroHasta": "To",
+    "todos": "All",
+    "todas": "All",
+    "filtrar": "Filter",
+    "limpiar": "Clear",
+    "resultados": "{total, plural, =0 {No records} =1 {1 record} other {# records}}",
+    "colFecha": "Date and time",
+    "colUsuario": "User",
+    "colAccion": "Action",
+    "colTabla": "Table",
+    "colRegistro": "Record",
+    "colIp": "IP",
+    "colDatos": "Data",
+    "verDatos": "View data",
+    "antes": "Before",
+    "despues": "After",
+    "empty": "No records match those filters.",
+    "rango": "{from}–{to} of {total}",
+    "pagina": "Page {page} of {total}",
+    "anterior": "Previous",
+    "siguiente": "Next"
   }
 }

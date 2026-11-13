@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import type { RowDataPacket } from "mysql2";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { getPreferences, PREF_CAMBIAR_PASSWORD } from "@/lib/preferences";
+import { FormNombre, FormPassword } from "./cuenta-forms";
 
 interface RolRow extends RowDataPacket {
   nombre: string;
@@ -13,14 +15,19 @@ export default async function CuentaPage() {
   if (!session) redirect("/auth");
 
   const t = await getTranslations("cuenta");
+  const idUsuario = Number(session.user.id);
 
-  const [roles] = await db.query<RolRow[]>(
-    "SELECT nombre FROM rol WHERE id_rol = ? LIMIT 1",
-    [session.user.rol]
-  );
+  const [[roles], prefs] = await Promise.all([
+    db.query<RolRow[]>("SELECT nombre FROM rol WHERE id_rol = ? LIMIT 1", [
+      session.user.rol,
+    ]),
+    getPreferences(idUsuario),
+  ]);
+
+  const nombre = prefs.nombre ?? session.user.name ?? "";
+  const debeCambiarPassword = prefs[PREF_CAMBIAR_PASSWORD] === "1";
 
   const campos = [
-    { label: t("nombre"), value: session.user.name ?? "—" },
     { label: t("email"), value: session.user.email ?? "—" },
     { label: t("rol"), value: roles[0]?.nombre ?? String(session.user.rol) },
   ];
@@ -53,6 +60,7 @@ export default async function CuentaPage() {
             </div>
           ))}
         </dl>
+        <FormNombre nombreActual={nombre} />
       </section>
 
       <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
@@ -64,13 +72,11 @@ export default async function CuentaPage() {
         </p>
       </section>
 
-      <section className="mt-4 rounded-xl border-2 border-dashed border-slate-300 bg-white/50 p-5 dark:border-slate-700 dark:bg-slate-900/50">
-        <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+      <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="text-sm font-semibold text-intess-dark dark:text-slate-100">
           {t("passwordTitle")}
         </h2>
-        <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">
-          {t("passwordSoon")}
-        </p>
+        <FormPassword debeCambiar={debeCambiarPassword} />
       </section>
     </div>
   );

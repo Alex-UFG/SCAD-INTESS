@@ -13,7 +13,7 @@ interface UsuarioRow extends RowDataPacket {
   nombre: string | null;
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   secret: process.env.AUTH_SECRET ?? "scad-intess-dev-secret-change-me",
   trustHost: true,
   session: { strategy: "jwt" },
@@ -60,10 +60,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.rol = user.rol;
+      }
+      if (trigger === "update" && typeof session?.user?.name === "string") {
+        token.name = session.user.name;
       }
       return token;
     },

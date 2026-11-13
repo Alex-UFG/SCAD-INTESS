@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import type { PermisoCodigo } from "@/lib/permisos";
 
-// Roles: 1 Admin, 2 Director, 3 Coordinador, 4 Secretaria, 5 Docente.
-// TODO: cuando exista UI de rol_permiso, filtrar por permisos en vez de roles.
 interface MenuItem {
   key: string;
   href: string;
-  roles: number[];
+  permiso?: PermisoCodigo;
+  roles?: number[];
   icon: ReactNode;
 }
 
@@ -58,7 +58,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "ciclos",
         href: "/dashboard/ciclos",
-        roles: [1, 2, 3, 4],
+        permiso: "config.ciclos",
         icon: (
           <Icon>
             <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -69,7 +69,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "materias",
         href: "/dashboard/materias",
-        roles: [1, 2, 3, 4],
+        permiso: "config.catalogos",
         icon: (
           <Icon>
             <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -80,7 +80,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "secciones",
         href: "/dashboard/secciones",
-        roles: [1, 2, 3, 4],
+        permiso: "config.catalogos",
         icon: (
           <Icon>
             <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5z" />
@@ -105,7 +105,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "cargas",
         href: "/dashboard/cargas",
-        roles: [1, 2, 3],
+        permiso: "config.carga",
         icon: (
           <Icon>
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
@@ -117,7 +117,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "estudiantes",
         href: "/dashboard/estudiantes",
-        roles: [1, 2, 3, 4],
+        permiso: "matricula.ver",
         icon: (
           <Icon>
             <circle cx="9" cy="8" r="3.5" />
@@ -129,7 +129,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "matriculas",
         href: "/dashboard/matriculas",
-        roles: [1, 2, 3, 4],
+        permiso: "matricula.ver",
         icon: (
           <Icon>
             <rect x="5" y="4" width="14" height="17" rx="2" />
@@ -145,7 +145,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "notas",
         href: "/dashboard/notas",
-        roles: [1, 2, 3, 5],
+        permiso: "notas.ver",
         icon: (
           <Icon>
             <path d="M17 3.5 20.5 7 9 18.5 4.5 20l1.5-4.5L17 3.5z" />
@@ -155,7 +155,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "periodos",
         href: "/dashboard/periodos",
-        roles: [1, 2, 3],
+        permiso: "config.ciclos",
         icon: (
           <Icon>
             <circle cx="12" cy="12" r="9" />
@@ -166,7 +166,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "boletas",
         href: "/dashboard/boletas",
-        roles: [1, 2, 3, 4, 5],
+        permiso: "reportes.boleta",
         icon: (
           <Icon>
             <path d="M6 3h9l4 4v14H6V3z" />
@@ -182,7 +182,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "paseLista",
         href: "/dashboard/pase-lista",
-        roles: [1, 2, 3, 5],
+        permiso: "asistencia.registrar",
         icon: (
           <Icon>
             <path d="M4 6h2M4 12h2M4 18h2M10 6h10M10 12h10M10 18h6" />
@@ -192,7 +192,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "resumenAsistencia",
         href: "/dashboard/asistencia",
-        roles: [1, 2, 3, 5],
+        permiso: "asistencia.ver",
         icon: (
           <Icon>
             <path d="M4 20V10M10 20V4M16 20v-8M21 20H3" />
@@ -207,7 +207,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "incidencias",
         href: "/dashboard/incidencias",
-        roles: [1, 2, 3, 5],
+        permiso: "disciplina.ver",
         icon: (
           <Icon>
             <path d="M12 3 2.5 20h19L12 3z" />
@@ -218,7 +218,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "citaciones",
         href: "/dashboard/citaciones",
-        roles: [1, 2, 3],
+        permiso: "disciplina.citar",
         icon: (
           <Icon>
             <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -245,7 +245,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "tutores",
         href: "/dashboard/tutores",
-        roles: [1, 3, 4],
+        permiso: "matricula.ver",
         icon: (
           <Icon>
             <circle cx="12" cy="7.5" r="3.5" />
@@ -261,7 +261,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "reportes",
         href: "/dashboard/reportes",
-        roles: [1, 2, 3, 4],
+        permiso: "reportes.consolidado",
         icon: (
           <Icon>
             <path d="M12 3v10l4-3" />
@@ -277,7 +277,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "usuarios",
         href: "/dashboard/usuarios",
-        roles: [1],
+        permiso: "usuarios.ver",
         icon: (
           <Icon>
             <circle cx="10" cy="8" r="3.5" />
@@ -301,7 +301,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "auditoria",
         href: "/dashboard/auditoria",
-        roles: [1],
+        permiso: "auditoria.ver",
         icon: (
           <Icon>
             <circle cx="10.5" cy="10.5" r="6.5" />
@@ -334,14 +334,25 @@ function MenuEntry({ item, active }: { item: MenuItem; active: boolean }) {
   );
 }
 
-function MenuContent({ rol }: { rol: number }) {
+interface MenuContentProps {
+  rol: number;
+  permisos: Set<string>;
+}
+
+function visibleParaRol(item: MenuItem, rol: number, permisos: Set<string>): boolean {
+  if (item.permiso) return permisos.has(item.permiso);
+  if (item.roles) return item.roles.includes(rol);
+  return true;
+}
+
+function MenuContent({ rol, permisos }: MenuContentProps) {
   const t = useTranslations("menu");
   const pathname = usePathname();
 
   return (
     <nav className="flex flex-col gap-5 p-4">
       {SECTIONS.map((section) => {
-        const visible = section.items.filter((i) => i.roles.includes(rol));
+        const visible = section.items.filter((i) => visibleParaRol(i, rol, permisos));
         if (visible.length === 0) return null;
         return (
           <div key={section.key}>
@@ -369,15 +380,21 @@ function MenuContent({ rol }: { rol: number }) {
   );
 }
 
-export function Sidebar({ rol }: { rol: number }) {
+interface SidebarProps {
+  rol: number;
+  permisos: string[];
+}
+
+export function Sidebar({ rol, permisos }: SidebarProps) {
   const t = useTranslations("menu");
   const [open, setOpen] = useState(false);
+  const permisosSet = useMemo(() => new Set(permisos), [permisos]);
 
   return (
     <>
       {/* Desktop */}
       <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:block">
-        <MenuContent rol={rol} />
+        <MenuContent rol={rol} permisos={permisosSet} />
       </aside>
       <button
         type="button"
@@ -411,7 +428,7 @@ export function Sidebar({ rol }: { rol: number }) {
               </button>
             </div>
             <div onClick={() => setOpen(false)}>
-              <MenuContent rol={rol} />
+              <MenuContent rol={rol} permisos={permisosSet} />
             </div>
           </div>
         </div>

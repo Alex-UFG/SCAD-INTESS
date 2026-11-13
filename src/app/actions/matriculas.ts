@@ -5,6 +5,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { CicloEscolar, MatriculaDetalle, SeccionConEspecialidad } from '@/types/academico';
 import { MatriculaFormData, matriculaSchema } from '@/lib/validations/matricula';
 import { requireSession } from '@/lib/session';
+import { registrarAuditoria } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
 
 export async function getMatriculasPorEstudiante(nie: number): Promise<MatriculaDetalle[]> {
@@ -101,12 +102,20 @@ export async function matricularEstudiante(data: MatriculaFormData) {
 
     // 2. Crear matrícula. La unicidad por ciclo la garantiza el índice
     //    uq_matricula_estudiante_ciclo (nie, id_ciclo); un pre-SELECT tendría carrera.
-    await connection.execute<ResultSetHeader>(
+    const [insert] = await connection.execute<ResultSetHeader>(
       `INSERT INTO matricula
         (nie, id_seccion, id_ciclo, fecha_matricula, estado, observaciones, registrada_por)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [nie, id_seccion, id_ciclo, fecha_matricula, estado, observaciones || null, id_usuario]
     );
+
+    await registrarAuditoria(connection, {
+      idUsuario: id_usuario,
+      tabla: 'matricula',
+      idRegistro: insert.insertId,
+      accion: 'INSERT',
+      datos: { nie, id_seccion, id_ciclo, fecha_matricula, estado, observaciones: observaciones || null },
+    });
 
     await connection.commit();
     revalidatePath(`/dashboard/estudiantes/${nie}`);
