@@ -8,11 +8,8 @@ import { auth } from "@/auth";
 const MODULOS: Record<string, string> = {
   notas: "notas",
   boletas: "boletas",
-  "pase-lista": "paseLista",
-  asistencia: "resumenAsistencia",
   incidencias: "incidencias",
   citaciones: "citaciones",
-  notificaciones: "notificaciones",
   reportes: "reportes",
 };
 
