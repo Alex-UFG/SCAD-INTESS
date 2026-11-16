@@ -9,7 +9,8 @@
     "dashboard": "Dashboard",
     "signOut": "Sign out",
     "account": "Account",
-    "role": "Role"
+    "role": "Role",
+    "notifications": "Notifications"
   },
   "common": {
     "back": "Back",
@@ -78,7 +79,10 @@
       "incidencias": "Incidents"
     },
     "attendanceTitle": "Today's attendance",
-    "attendanceEmpty": "No attendance records yet. Data will appear here once the roll-call module is built.",
+    "attendance": {
+      "ausenciasHoy": "Absences today",
+      "bajoUmbral": "Below attendance threshold"
+    },
     "quickTitle": "Quick actions",
     "quick": {
       "paseLista": "Take attendance",
@@ -642,6 +646,8 @@
     "periodoActualizado": "Period dates updated.",
     "periodoAbierto": "Period opened.",
     "periodoCerrado": "Period closed.",
+    "notifCierreTitulo": "Period {numero} closed",
+    "notifCierreMensaje": "Period {numero} was closed. Grades stay open for corrections for 72 hours and are then locked.",
     "estados": {
       "Planificado": "Planned",
       "Activo": "Active",
@@ -771,6 +777,84 @@
       "noExiste": "The assignment does not exist.",
       "tieneRegistros": "Grades or attendance already recorded with this assignment; it cannot be removed.",
       "errorServidor": "A server error occurred."
+    }
+  },
+  "paseLista": {
+    "guardada": "Attendance saved.",
+    "errors": {
+      "sinPermiso": "You do not have permission to record attendance.",
+      "revisarCampos": "Check the highlighted fields.",
+      "cargaInvalida": "Select a valid assignment.",
+      "fechaInvalida": "Enter a valid date.",
+      "sinRegistros": "Set the status of at least one student.",
+      "estadoInvalido": "Invalid attendance status.",
+      "observacionRequerida": "A note is required for justified attendance.",
+      "observacionLarga": "The note allows up to 200 characters.",
+      "cargaNoDisponible": "The assignment does not exist or is not yours.",
+      "fechaFueraDeRango": "The date must be within the school year and cannot be in the future.",
+      "fechaMuyAntigua": "You can only record or correct attendance from the last 7 days.",
+      "estudianteInvalido": "Some students have no current enrollment in this section.",
+      "errorServidor": "A server error occurred."
+    },
+    "title": "Attendance roll call",
+    "subtitle": "Record your students' attendance by assignment and date.",
+    "sinCargas": "No teaching assignments available.",
+    "carga": "Teaching assignment",
+    "seleccioneCarga": "Select an assignment",
+    "fecha": "Date",
+    "ver": "Show list",
+    "sinEstudiantes": "No students are enrolled in this section.",
+    "marcarTodos": "Mark all present",
+    "observacion": "Remark",
+    "guardar": "Save attendance",
+    "guardando": "Saving...",
+    "estados": {
+      "Presente": "Present",
+      "Ausente": "Absent",
+      "Tardanza": "Late",
+      "Justificado": "Excused"
+    }
+  },
+  "asistencia": {
+    "title": "Attendance summary",
+    "subtitle": "Attendance by student. Students below {umbral}% are highlighted in red.",
+    "ciclo": "School year",
+    "seccion": "Section",
+    "todasSecciones": "All sections",
+    "desde": "From",
+    "hasta": "To",
+    "filtrar": "Filter",
+    "colEstudiante": "Student",
+    "colSeccion": "Section",
+    "colTotal": "Total",
+    "colPresentes": "Present",
+    "colAusentes": "Absent",
+    "colTardanzas": "Late",
+    "colJustificados": "Excused",
+    "colPorcentaje": "Attendance %",
+    "empty": "No attendance records for this filter.",
+    "volver": "Back to summary",
+    "detalleSubtitle": "NIE {nie} · School year {anio}",
+    "colFecha": "Date",
+    "colMateria": "Subject",
+    "colEstado": "Status",
+    "colObservacion": "Remark",
+    "emptyDetalle": "This student has no attendance records in the school year."
+  },
+  "notificaciones": {
+    "title": "Notifications",
+    "subtitle": "System notices addressed to your user.",
+    "marcarLeida": "Mark as read",
+    "marcarTodas": "Mark all as read",
+    "leida": "Read",
+    "noLeida": "Unread",
+    "empty": "You have no notifications.",
+    "tipos": {
+      "Riesgo_Academico": "Academic risk",
+      "Reincidencia": "Repeat offense",
+      "Citacion": "Summons",
+      "Cierre_Periodo": "Period closing",
+      "Sistema": "System"
     }
   }
 }

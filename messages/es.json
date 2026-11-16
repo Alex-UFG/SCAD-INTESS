@@ -9,7 +9,8 @@
     "dashboard": "Panel principal",
     "signOut": "Cerrar sesión",
     "account": "Cuenta",
-    "role": "Rol"
+    "role": "Rol",
+    "notifications": "Notificaciones"
   },
   "common": {
     "back": "Volver",
@@ -78,7 +79,10 @@
       "incidencias": "Incidencias"
     },
     "attendanceTitle": "Asistencia de hoy",
-    "attendanceEmpty": "Sin registros de asistencia todavía. Los datos aparecerán aquí cuando se construya el módulo de pase de lista.",
+    "attendance": {
+      "ausenciasHoy": "Ausencias hoy",
+      "bajoUmbral": "Bajo el umbral de asistencia"
+    },
     "quickTitle": "Accesos rápidos",
     "quick": {
       "paseLista": "Tomar asistencia",
@@ -642,6 +646,8 @@
     "periodoActualizado": "Fechas del período actualizadas.",
     "periodoAbierto": "Período abierto.",
     "periodoCerrado": "Período cerrado.",
+    "notifCierreTitulo": "Período {numero} cerrado",
+    "notifCierreMensaje": "El período {numero} se cerró. Las notas quedan abiertas a correcciones por 72 horas y luego se bloquean.",
     "estados": {
       "Planificado": "Planificado",
       "Activo": "Activo",
@@ -771,6 +777,84 @@
       "noExiste": "La carga no existe.",
       "tieneRegistros": "Ya hay notas o asistencia registradas con esta carga; no se puede quitar.",
       "errorServidor": "Ocurrió un error en el servidor."
+    }
+  },
+  "paseLista": {
+    "guardada": "Asistencia guardada.",
+    "errors": {
+      "sinPermiso": "No tienes permiso para registrar asistencia.",
+      "revisarCampos": "Revisa los campos marcados.",
+      "cargaInvalida": "Seleccione una carga válida.",
+      "fechaInvalida": "Indique una fecha válida.",
+      "sinRegistros": "Indique el estado de al menos un estudiante.",
+      "estadoInvalido": "Estado de asistencia no válido.",
+      "observacionRequerida": "La observación es obligatoria para una asistencia justificada.",
+      "observacionLarga": "La observación admite hasta 200 caracteres.",
+      "cargaNoDisponible": "La carga no existe o no te pertenece.",
+      "fechaFueraDeRango": "La fecha debe estar dentro del ciclo y no puede ser futura.",
+      "fechaMuyAntigua": "Solo puedes registrar o corregir asistencia de los últimos 7 días.",
+      "estudianteInvalido": "Hay estudiantes sin matrícula vigente en esta sección.",
+      "errorServidor": "Ocurrió un error en el servidor."
+    },
+    "title": "Pase de lista",
+    "subtitle": "Registra la asistencia de tus estudiantes por carga y fecha.",
+    "sinCargas": "No hay cargas académicas disponibles.",
+    "carga": "Carga académica",
+    "seleccioneCarga": "Seleccione una carga",
+    "fecha": "Fecha",
+    "ver": "Ver lista",
+    "sinEstudiantes": "No hay estudiantes matriculados en esta sección.",
+    "marcarTodos": "Marcar todos presentes",
+    "observacion": "Observación",
+    "guardar": "Guardar asistencia",
+    "guardando": "Guardando...",
+    "estados": {
+      "Presente": "Presente",
+      "Ausente": "Ausente",
+      "Tardanza": "Tardanza",
+      "Justificado": "Justificado"
+    }
+  },
+  "asistencia": {
+    "title": "Resumen de asistencia",
+    "subtitle": "Asistencia por estudiante. Se resalta en rojo a quienes están por debajo del {umbral}%.",
+    "ciclo": "Ciclo",
+    "seccion": "Sección",
+    "todasSecciones": "Todas las secciones",
+    "desde": "Desde",
+    "hasta": "Hasta",
+    "filtrar": "Filtrar",
+    "colEstudiante": "Estudiante",
+    "colSeccion": "Sección",
+    "colTotal": "Total",
+    "colPresentes": "Presentes",
+    "colAusentes": "Ausentes",
+    "colTardanzas": "Tardanzas",
+    "colJustificados": "Justificados",
+    "colPorcentaje": "% asistencia",
+    "empty": "No hay registros de asistencia para este filtro.",
+    "volver": "Volver al resumen",
+    "detalleSubtitle": "NIE {nie} · Ciclo {anio}",
+    "colFecha": "Fecha",
+    "colMateria": "Materia",
+    "colEstado": "Estado",
+    "colObservacion": "Observación",
+    "emptyDetalle": "Este estudiante no tiene registros de asistencia en el ciclo."
+  },
+  "notificaciones": {
+    "title": "Notificaciones",
+    "subtitle": "Avisos del sistema dirigidos a tu usuario.",
+    "marcarLeida": "Marcar como leída",
+    "marcarTodas": "Marcar todas como leídas",
+    "leida": "Leída",
+    "noLeida": "No leída",
+    "empty": "No tienes notificaciones.",
+    "tipos": {
+      "Riesgo_Academico": "Riesgo académico",
+      "Reincidencia": "Reincidencia",
+      "Citacion": "Citación",
+      "Cierre_Periodo": "Cierre de período",
+      "Sistema": "Sistema"
     }
   }
 }

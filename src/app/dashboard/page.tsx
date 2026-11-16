@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server";
 import type { RowDataPacket } from "mysql2";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { getPermisosDeRol } from "@/lib/permisos";
+import { getIndicadoresAsistencia } from "@/app/actions/asistencia";
 
 interface CountRow extends RowDataPacket {
   total: number;
@@ -26,7 +28,11 @@ export default async function DashboardPage() {
 
   const t = await getTranslations("dash");
 
-  const [estudiantes, docentes, matriculas, incidencias, roles] =
+  const verAsistencia = (await getPermisosDeRol(session.user.rol)).has(
+    "asistencia.ver"
+  );
+
+  const [estudiantes, docentes, matriculas, incidencias, roles, asistencia] =
     await Promise.all([
       contar("estudiante"),
       contar("docente"),
@@ -37,6 +43,7 @@ export default async function DashboardPage() {
           session.user.rol,
         ])
         .then(([r]) => r),
+      verAsistencia ? getIndicadoresAsistencia() : null,
     ]);
 
   const stats = [
@@ -81,16 +88,29 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2 dark:border-slate-700 dark:bg-slate-900">
-          <h2 className="text-sm font-semibold text-intess-dark dark:text-slate-100">
-            {t("attendanceTitle")}
-          </h2>
-          <div className="mt-4 flex h-44 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700">
-            <p className="max-w-xs text-center text-sm text-slate-400 dark:text-slate-500">
-              {t("attendanceEmpty")}
-            </p>
-          </div>
-        </section>
+        {asistencia && (
+          <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2 dark:border-slate-700 dark:bg-slate-900">
+            <h2 className="text-sm font-semibold text-intess-dark dark:text-slate-100">
+              {t("attendanceTitle")}
+            </h2>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {(["ausenciasHoy", "bajoUmbral"] as const).map((k) => (
+                <Link
+                  key={k}
+                  href="/dashboard/asistencia"
+                  className="rounded-lg border border-slate-200 p-4 transition-colors hover:border-intess dark:border-slate-700 dark:hover:border-intess-accent"
+                >
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                    {t(`attendance.${k}`)}
+                  </p>
+                  <p className="mt-1.5 text-2xl font-bold tabular-nums text-intess-dark dark:text-slate-100">
+                    {asistencia[k]}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
         <section className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
           <h2 className="text-sm font-semibold text-intess-dark dark:text-slate-100">
             {t("quickTitle")}
