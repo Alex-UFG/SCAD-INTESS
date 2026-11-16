@@ -1,51 +1,95 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useTranslations } from 'next-intl';
 
-type Tipo = 'success' | 'error' | 'info';
-interface Toast { id: number; tipo: Tipo; mensaje: string }
+export type ToastType = 'success' | 'error' | 'info';
 
-interface ToastApi {
-  success: (mensaje: string) => void;
-  error: (mensaje: string) => void;
-  info: (mensaje: string) => void;
+export interface ToastInput {
+  type?: ToastType;
+  message: string;
+  duration?: number;
 }
 
-const ToastContext = createContext<ToastApi | null>(null);
+interface Toast extends Required<ToastInput> {
+  id: number;
+}
 
-const estilos: Record<Tipo, string> = {
-  success: 'bg-green-600 text-white',
-  error: 'bg-red-600 text-white',
-  info: 'bg-slate-800 text-white dark:bg-slate-700',
+interface ToastContextValue {
+  toast: (input: ToastInput) => void;
+  success: (message: string) => void;
+  error: (message: string) => void;
+  info: (message: string) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+
+const STYLES: Record<ToastType, string> = {
+  success:
+    'border-aprobado/40 bg-aprobado-bg text-aprobado dark:border-aprobado/40 dark:bg-aprobado/15',
+  error:
+    'border-reprobado/40 bg-reprobado-bg text-reprobado dark:border-reprobado/40 dark:bg-reprobado/15',
+  info: 'border-intess/30 bg-intess-light text-intess dark:border-intess-accent/40 dark:bg-intess/20 dark:text-intess-accent',
 };
 
-const DURACION_MS = 4000;
-
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations('common');
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const nextId = useRef(1);
 
-  const push = useCallback((tipo: Tipo, mensaje: string) => {
-    const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, tipo, mensaje }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), DURACION_MS);
+  const dismiss = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((x) => x.id !== id));
   }, []);
 
-  const api = useMemo<ToastApi>(
+  const toast = useCallback(
+    ({ type = 'info', message, duration = 4000 }: ToastInput) => {
+      const id = nextId.current++;
+      setToasts((prev) => [...prev, { id, type, message, duration }]);
+      if (duration > 0) setTimeout(() => dismiss(id), duration);
+    },
+    [dismiss]
+  );
+
+  const value = useMemo<ToastContextValue>(
     () => ({
-      success: (m) => push('success', m),
-      error: (m) => push('error', m),
-      info: (m) => push('info', m),
+      toast,
+      success: (message) => toast({ type: 'success', message }),
+      error: (message) => toast({ type: 'error', message, duration: 6000 }),
+      info: (message) => toast({ type: 'info', message }),
     }),
-    [push]
+    [toast]
   );
 
   return (
-    <ToastContext.Provider value={api}>
+    <ToastContext.Provider value={value}>
       {children}
-      <div aria-live="polite" className="pointer-events-none fixed bottom-5 right-5 z-[60] flex flex-col gap-2">
-        {toasts.map((t) => (
-          <div key={t.id} role="status" className={`pointer-events-auto rounded-lg px-4 py-3 text-sm shadow-lg ${estilos[t.tipo]}`}>
-            {t.mensaje}
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4 sm:items-end sm:px-6"
+      >
+        {toasts.map((item) => (
+          <div
+            key={item.id}
+            role={item.type === 'error' ? 'alert' : 'status'}
+            className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg ${STYLES[item.type]}`}
+          >
+            <span className="flex-1">{item.message}</span>
+            <button
+              type="button"
+              onClick={() => dismiss(item.id)}
+              aria-label={t('close')}
+              className="shrink-0 opacity-60 transition-opacity hover:opacity-100"
+            >
+              ✕
+            </button>
           </div>
         ))}
       </div>
@@ -53,9 +97,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/**Notificaciones breves tras una accion; requiere ToastProvider (providers.tsx) */
-export function useToast(): ToastApi {
+export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast debe usarse dentro de ToastProvider');
+  if (!ctx) throw new Error('useToast debe usarse dentro de <ToastProvider>');
   return ctx;
 }

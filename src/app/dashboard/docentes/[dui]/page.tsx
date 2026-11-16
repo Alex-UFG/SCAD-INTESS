@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { getDocentePorDui, getEspecialidadesActivas, setEstadoDocente } from '@/app/actions/docentes';
 import { ESTADOS_DOCENTE } from '@/lib/constantes';
 import { getCargas } from '@/app/actions/cargas';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { nombreCompleto, formatFecha } from '@/lib/format';
 import { DUI_REGEX } from '@/lib/validations/shared';
 import { Badge, TONO_DOCENTE } from '@/components/ui/badge';

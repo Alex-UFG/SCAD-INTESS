@@ -88,6 +88,7 @@ export function AuthSwap() {
   const [mode, setMode] = useState<Mode>("login");
   const [authError, setAuthError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
@@ -277,8 +278,24 @@ export function AuthSwap() {
                       />
                       {t("remember")}
                     </label>
-                    {/* Gap 3: sin correo ni tokens, el reset lo hace el Admin desde Usuarios */}
+                    <button
+                      type="button"
+                      onClick={() => setForgotOpen((v) => !v)}
+                      aria-expanded={forgotOpen}
+                      className="font-medium text-intess hover:underline dark:text-intess-accent"
+                    >
+                      {t("forgot")}
+                    </button>
                   </div>
+
+                  {forgotOpen && (
+                    <p
+                      role="note"
+                      className="rounded-md border border-intess/20 bg-intess-light px-3 py-2 text-xs text-intess dark:border-intess-accent/30 dark:bg-intess/15 dark:text-intess-accent"
+                    >
+                      {t("forgotHint")}
+                    </p>
+                  )}
 
                   <button
                     type="submit"

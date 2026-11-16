@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getCicloPorId, cambiarEstadoCiclo } from '@/app/actions/ciclos';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { Badge, TONO_CICLO } from '@/components/ui/badge';
 import { ActionButton } from '@/components/ui/action-button';
 import { FormCiclo } from '../form-ciclo';

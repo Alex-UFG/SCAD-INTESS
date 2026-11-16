@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { getEstudiantePorNie } from '@/app/actions/estudiantes';
 import { getMatriculasPorEstudiante, getCiclosAbiertos, getSecciones } from '@/app/actions/matriculas';
 import { getTutores } from '@/app/actions/tutores';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { nombreCompleto, formatFecha } from '@/lib/format';
 import { EstadoEstudianteBadge } from '@/components/ui/estado-badge';
 import { Badge, TONO_MATRICULA } from '@/components/ui/badge';

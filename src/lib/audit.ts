@@ -8,14 +8,13 @@ interface RegistroAuditoria {
   tabla: string;
   idRegistro: string | number;
   accion: AccionAuditoria;
-  /**Estado nuevo del registro (JSON). Nunca incluir hashes ni secretos. */
   datos?: unknown;
-  /**Estado previo del registro (JSON) en UPDATE/DELETE. */
   datosAnteriores?: unknown;
 }
 
-/**IP real del cliente; fuera de un request (pruebas, scripts) devuelve 0.0.0.0 */
-async function ipOrigen(): Promise<string> {
+type Ejecutor = Pick<Pool, "execute"> | Pick<PoolConnection, "execute">;
+
+async function ipCliente(): Promise<string> {
   try {
     const hdrs = await headers();
     return (
@@ -28,18 +27,13 @@ async function ipOrigen(): Promise<string> {
   }
 }
 
-/**
- * Inserta en log_auditoria. Recibe la conexion de la transaccion del caller
- * para que el registro sea atomico con la escritura que audita; acepta el pool
- * (`db`) para eventos sin transaccion como LOGIN/LOGOUT.
- */
 export async function registrarAuditoria(
-  executor: PoolConnection | Pool,
+  ejecutor: Ejecutor,
   { idUsuario, tabla, idRegistro, accion, datos, datosAnteriores }: RegistroAuditoria
 ): Promise<void> {
-  const ip = await ipOrigen();
+  const ip = await ipCliente();
 
-  await executor.execute(
+  await ejecutor.execute(
     `INSERT INTO log_auditoria
       (id_usuario, tabla_afectada, id_registro, tipo_accion, datos_anteriores, datos_nuevos, ip_origen)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,

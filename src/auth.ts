@@ -3,7 +3,6 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import type { RowDataPacket } from "mysql2";
 import { db } from "@/lib/db";
-import { registrarAuditoria } from "@/lib/audit";
 
 interface UsuarioRow extends RowDataPacket {
   id_usuario: number;
@@ -65,34 +64,13 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
       },
     }),
   ],
-  events: {
-    async signIn({ user }) {
-      if (!user?.id) return;
-      await registrarAuditoria(db, {
-        idUsuario: Number(user.id),
-        tabla: "usuario",
-        idRegistro: user.id,
-        accion: "LOGIN",
-      });
-    },
-    async signOut(message) {
-      const token = (message as { token?: { id?: string } | null }).token;
-      if (!token?.id) return;
-      await registrarAuditoria(db, {
-        idUsuario: Number(token.id),
-        tabla: "usuario",
-        idRegistro: token.id,
-        accion: "LOGOUT",
-      });
-    },
-  },
   callbacks: {
     jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.rol = user.rol;
       }
-      if (trigger === "update" && session?.user?.name) {
+      if (trigger === "update" && typeof session?.user?.name === "string") {
         token.name = session.user.name;
       }
       return token;

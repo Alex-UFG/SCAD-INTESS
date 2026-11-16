@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { getMaterias, toggleMateriaActiva } from '@/app/actions/materias';
 import { getEspecialidadesActivas } from '@/app/actions/docentes';
-import { requirePermiso } from '@/lib/session';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { requirePermiso } from '@/lib/permisos';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 import { Badge } from '@/components/ui/badge';
 import { ActionButton } from '@/components/ui/action-button';
 import { FormMateria } from './form-materia';
@@ -19,7 +19,7 @@ export default async function MateriasPage() {
   const puedeEditar = Boolean(editor);
   const linkClass = 'text-blue-600 hover:underline dark:text-blue-400 text-sm font-medium bg-transparent p-0';
 
-  const rows: DataTableRow[] = materias.map((m) => ({
+  const rows: RowsTableRow[] = materias.map((m) => ({
     key: m.cod_materia,
     cells: [
       <span key="c" className="font-mono">{m.cod_materia}</span>,
@@ -56,7 +56,7 @@ export default async function MateriasPage() {
         {puedeEditar && <FormMateria especialidades={especialidades} trigger={t('nueva')} />}
       </div>
 
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colCodigo'), sortable: true },
           { header: t('colNombre'), sortable: true },

@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getTutorPorDui } from '@/app/actions/tutores';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { DUI_REGEX } from '@/lib/validations/shared';
 import { TutorForm } from '@/components/tutores/tutor-form';
 

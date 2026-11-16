@@ -5,9 +5,9 @@ import { getCiclos } from '@/app/actions/ciclos';
 import { getDocentes } from '@/app/actions/docentes';
 import { getMaterias } from '@/app/actions/materias';
 import { getSecciones } from '@/app/actions/secciones';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { inputClass } from '@/components/ui/form-field';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 import { ActionButton } from '@/components/ui/action-button';
 import { FormCarga } from './form-carga';
 
@@ -33,7 +33,7 @@ export default async function CargasPage({ searchParams }: { searchParams: Promi
       ])
     : [[], [], [], []];
 
-  const rows: DataTableRow[] = cargas.map((c) => ({
+  const rows: RowsTableRow[] = cargas.map((c) => ({
     key: String(c.id_carga),
     cells: [
       <Link key="d" href={`/dashboard/docentes/${c.dui_docente}`} className="font-medium text-blue-600 hover:underline dark:text-blue-400">{c.docente}</Link>,
@@ -90,7 +90,7 @@ export default async function CargasPage({ searchParams }: { searchParams: Promi
         </button>
       </form>
 
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colDocente'), sortable: true },
           { header: t('colSeccion'), sortable: true },

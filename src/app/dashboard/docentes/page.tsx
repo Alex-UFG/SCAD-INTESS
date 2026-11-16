@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { getDocentes } from '@/app/actions/docentes';
 import { nombreCompleto } from '@/lib/format';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 import { Badge, TONO_DOCENTE } from '@/components/ui/badge';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export default async function DocentesPage() {
   const [t, docentes] = await Promise.all([getTranslations('docentes'), getDocentes()]);
 
-  const rows: DataTableRow[] = docentes.map((d) => ({
+  const rows: RowsTableRow[] = docentes.map((d) => ({
     key: d.dui_docente,
     cells: [
       <span key="d" className="font-mono">{d.dui_docente}</span>,
@@ -30,7 +30,7 @@ export default async function DocentesPage() {
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('listaTitle')}</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">{t('listaSubtitle')}</p>
       </div>
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colDui'), sortable: true },
           { header: t('colNombre'), sortable: true },

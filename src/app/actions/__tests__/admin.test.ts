@@ -7,8 +7,9 @@ import { mockSession, sesionDe, type Sesion } from "@/test/mock-session";
 const estado = vi.hoisted(() => ({ sesion: null as Sesion | null }));
 vi.mock("@/lib/session", () => mockSession(estado));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next-intl/server", () => ({ getTranslations: async () => (k: string) => k }));
 
-const { aprobarUsuarioAction, setEstadoUsuarioAction, setRolUsuarioAction, togglePermisoAction, resetPasswordAction } =
+const { aprobarUsuarioAction, setEstadoUsuarioAction, setRolUsuarioAction, togglePermisoAction, resetPasswordUsuario } =
   await import("@/app/actions/admin");
 
 const EMAIL = "solicitante.prueba@intess.edu.sv";
@@ -45,11 +46,13 @@ describe.skipIf(!process.env.DB_HOST)("acciones de administracion", () => {
   afterAll(async () => {
     await db.execute("DELETE FROM log_auditoria WHERE tabla_afectada = 'usuario' AND id_registro = ?", [String(idUsuario)]);
     await db.execute("DELETE FROM log_auditoria WHERE tabla_afectada = 'rol_permiso' AND id_registro LIKE '4:%'");
+    await db.execute("DELETE FROM usuario_preferencia WHERE id_usuario = ?", [idUsuario]);
     await db.execute("DELETE FROM usuario WHERE id_usuario = ?", [idUsuario]);
     await db.end();
   });
 
-  it("solo un Admin puede aprobar", async () => {
+  it("sin usuarios.editar no se puede aprobar", async () => {
+    // Director (2) solo tiene usuarios.ver en el seed
     estado.sesion = sesionDe(2);
     await aprobarUsuarioAction(fd({ id: idUsuario }));
     expect((await usuario()).estado).toBe("Inactivo");
@@ -67,7 +70,7 @@ describe.skipIf(!process.env.DB_HOST)("acciones de administracion", () => {
 
   it("rol invalido se ignora; rol valido cambia y audita", async () => {
     estado.sesion = sesionDe(1);
-    await setRolUsuarioAction(fd({ id: idUsuario, rol: 9 }));
+    await setRolUsuarioAction(fd({ id: idUsuario, rol: 300 }));
     expect((await usuario()).id_rol).toBe(5);
     await setRolUsuarioAction(fd({ id: idUsuario, rol: "abc" }));
     expect((await usuario()).id_rol).toBe(5);
@@ -114,21 +117,31 @@ describe.skipIf(!process.env.DB_HOST)("acciones de administracion", () => {
     expect(logs.map((l) => l.tipo_accion)).toEqual(["INSERT", "DELETE"]);
   });
 
-  it("resetPassword genera una temporal valida y nunca guarda la clave en la bitacora", async () => {
+  it("resetPassword genera una temporal valida, marca el cambio obligatorio y nunca guarda la clave en la bitacora", async () => {
     estado.sesion = sesionDe(1, idUsuario);
-    expect(await resetPasswordAction({}, fd({ id: idUsuario }))).toEqual({ success: false, message: "propiaCuenta" });
+    expect(await resetPasswordUsuario(idUsuario)).toEqual({ success: false, message: "errors.propiaCuenta" });
+
+    estado.sesion = sesionDe(5);
+    expect(await resetPasswordUsuario(idUsuario)).toEqual({ success: false, message: "errors.sinPermiso" });
 
     estado.sesion = sesionDe(1);
-    const r = await resetPasswordAction({}, fd({ id: idUsuario }));
-    expect(r.success).toBe(true);
-    expect(r.message).toMatch(/^[A-Za-z0-9]{12}$/);
-    expect(await bcrypt.compare(r.message!, (await usuario()).password_hash)).toBe(true);
+    const r = await resetPasswordUsuario(idUsuario);
+    if (!r.success) throw new Error(r.message);
+    expect(r.email).toBe(EMAIL);
+    expect(r.password).toMatch(/^[A-Za-z0-9]{12}$/);
+    expect(await bcrypt.compare(r.password, (await usuario()).password_hash)).toBe(true);
+
+    const [prefs] = await db.query<RowDataPacket[]>(
+      "SELECT valor FROM usuario_preferencia WHERE id_usuario = ? AND clave = 'cambiar_password'",
+      [idUsuario]
+    );
+    expect(prefs[0]?.valor).toBe("1");
 
     const logs = await auditorias();
     const ultimo = logs.at(-1)!;
     expect(ultimo.datos_nuevos.campo).toBe("password_hash");
-    expect(JSON.stringify(ultimo)).not.toContain(r.message);
+    expect(JSON.stringify(ultimo)).not.toContain(r.password);
 
-    expect(await resetPasswordAction({}, fd({ id: 999999 }))).toEqual({ success: false, message: "noExiste" });
+    expect(await resetPasswordUsuario(999999)).toEqual({ success: false, message: "errors.noExiste" });
   });
 });

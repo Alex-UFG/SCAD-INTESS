@@ -3,134 +3,167 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 
-export interface DataTableColumn {
-  header: string;
+export type SortDir = 'asc' | 'desc';
+
+export interface Column<T> {
+  key: string;
+  header: ReactNode;
   sortable?: boolean;
-  align?: 'left' | 'right' | 'center';
-  /**Clase extra para la celda (ej. font-mono) */
+  sortValue?: (row: T) => string | number | Date | null | undefined;
+  render?: (row: T) => ReactNode;
+  align?: 'left' | 'center' | 'right';
   className?: string;
 }
 
-/**
- * Fila ya renderizada: las paginas de servidor construyen las celdas como JSX
- * (badges, links) y pasan valores planos para ordenar y buscar. Asi la tabla
- * es un client component sin recibir funciones desde el servidor.
- */
-export interface DataTableRow {
-  key: string;
-  cells: ReactNode[];
-  /**Un valor por columna, en el mismo orden; null va al final al ordenar */
-  sort: (string | number | null)[];
-  /**Texto sobre el que actua la busqueda (normalizado en minusculas) */
-  search: string;
-}
-
-interface DataTableProps {
-  columns: DataTableColumn[];
-  rows: DataTableRow[];
-  emptyText: string;
+interface DataTableProps<T> {
+  columns: Column<T>[];
+  rows: T[];
+  rowKey: (row: T) => string | number;
   pageSize?: number;
-  searchable?: boolean;
-  /**Ordenamiento inicial: indice de columna y direccion */
-  defaultSort?: { column: number; dir: 'asc' | 'desc' };
-  /**Contenido a la izquierda del buscador (filtros, contadores) */
+  initialSort?: { key: string; dir: SortDir };
+  searchText?: (row: T) => string;
+  emptyMessage?: string;
   toolbar?: ReactNode;
 }
 
-const alignClass = { left: 'text-left', right: 'text-right', center: 'text-center' } as const;
+const ALIGN: Record<NonNullable<Column<unknown>['align']>, string> = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+};
 
-function compare(a: string | number | null, b: string | number | null): number {
-  if (a === null && b === null) return 0;
-  if (a === null) return 1;
-  if (b === null) return -1;
+function valorCelda<T>(row: T, col: Column<T>): unknown {
+  if (col.sortValue) return col.sortValue(row);
+  return (row as Record<string, unknown>)[col.key];
+}
+
+function comparar(a: unknown, b: unknown): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
   if (typeof a === 'number' && typeof b === 'number') return a - b;
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-export function DataTable({ columns, rows, emptyText, pageSize = 20, searchable = true, defaultSort, toolbar }: DataTableProps) {
+export function DataTable<T>({
+  columns,
+  rows,
+  rowKey,
+  pageSize = 10,
+  initialSort,
+  searchText,
+  emptyMessage,
+  toolbar,
+}: DataTableProps<T>) {
   const t = useTranslations('common.table');
+  const [sort, setSort] = useState<{ key: string; dir: SortDir } | null>(initialSort ?? null);
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<{ column: number; dir: 'asc' | 'desc' } | null>(defaultSort ?? null);
   const [page, setPage] = useState(1);
 
   const filtradas = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const base = q ? rows.filter((r) => r.search.toLowerCase().includes(q)) : rows;
-    if (!sort) return base;
+    const q = query.trim().toLocaleLowerCase();
+    if (!q || !searchText) return rows;
+    return rows.filter((r) => searchText(r).toLocaleLowerCase().includes(q));
+  }, [rows, query, searchText]);
+
+  const ordenadas = useMemo(() => {
+    if (!sort) return filtradas;
+    const col = columns.find((c) => c.key === sort.key);
+    if (!col) return filtradas;
     const factor = sort.dir === 'asc' ? 1 : -1;
-    return [...base].sort((a, b) => factor * compare(a.sort[sort.column], b.sort[sort.column]));
-  }, [rows, query, sort]);
+    return [...filtradas].sort((a, b) => comparar(valorCelda(a, col), valorCelda(b, col)) * factor);
+  }, [filtradas, sort, columns]);
 
-  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / pageSize));
+  const totalPaginas = pageSize > 0 ? Math.max(1, Math.ceil(ordenadas.length / pageSize)) : 1;
   const paginaActual = Math.min(page, totalPaginas);
-  const inicio = (paginaActual - 1) * pageSize;
-  const visibles = filtradas.slice(inicio, inicio + pageSize);
+  const visibles =
+    pageSize > 0
+      ? ordenadas.slice((paginaActual - 1) * pageSize, paginaActual * pageSize)
+      : ordenadas;
 
-  const ordenarPor = (i: number) => {
+  function toggleSort(col: Column<T>) {
+    if (!col.sortable) return;
+    setSort((prev) =>
+      prev?.key === col.key
+        ? { key: col.key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+        : { key: col.key, dir: 'asc' }
+    );
     setPage(1);
-    setSort((prev) => (prev?.column === i ? { column: i, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { column: i, dir: 'asc' }));
-  };
+  }
 
   return (
-    <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800">
-      {(searchable || toolbar) && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex flex-wrap items-center gap-3">{toolbar}</div>
-          {searchable && (
+    <div className="flex flex-col">
+      {(searchText || toolbar) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-3">
+          {searchText ? (
             <input
               type="search"
               value={query}
-              onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
               placeholder={t('search')}
               aria-label={t('search')}
-              className="w-full sm:w-64 px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full max-w-xs rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-intess focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             />
+          ) : (
+            <span />
           )}
+          {toolbar}
         </div>
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left text-sm">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-              {columns.map((c, i) => (
-                <th
-                  key={i}
-                  aria-sort={c.sortable ? (sort?.column === i ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
-                  className={`p-4 font-semibold text-gray-700 dark:text-gray-200 text-sm ${alignClass[c.align ?? 'left']}`}
-                >
-                  {c.sortable ? (
-                    <button
-                      type="button"
-                      onClick={() => ordenarPor(i)}
-                      className="inline-flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      {c.header}
-                      <span aria-hidden="true" className="text-xs text-gray-400">
-                        {sort?.column === i ? (sort.dir === 'asc' ? '▲' : '▼') : '↕'}
-                      </span>
-                    </button>
-                  ) : (
-                    c.header
-                  )}
-                </th>
-              ))}
+            <tr className="border-y border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              {columns.map((col) => {
+                const activa = sort?.key === col.key;
+                return (
+                  <th
+                    key={col.key}
+                    scope="col"
+                    aria-sort={activa ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    className={`px-4 py-2.5 font-medium ${ALIGN[col.align ?? 'left']} ${col.className ?? ''}`}
+                  >
+                    {col.sortable ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(col)}
+                        className="inline-flex items-center gap-1 uppercase hover:text-intess dark:hover:text-intess-accent"
+                      >
+                        {col.header}
+                        <span aria-hidden="true" className={activa ? 'text-intess dark:text-intess-accent' : 'text-slate-300 dark:text-slate-600'}>
+                          {activa && sort.dir === 'desc' ? '▼' : '▲'}
+                        </span>
+                      </button>
+                    ) : (
+                      col.header
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
-          <tbody>
-            {visibles.map((r) => (
-              <tr key={r.key} className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                {r.cells.map((cell, i) => (
-                  <td key={i} className={`p-4 text-sm text-gray-900 dark:text-gray-300 ${alignClass[columns[i]?.align ?? 'left']} ${columns[i]?.className ?? ''}`}>
-                    {cell}
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {visibles.map((row) => (
+              <tr key={rowKey(row)} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className={`px-4 py-3 text-slate-700 dark:text-slate-200 ${ALIGN[col.align ?? 'left']} ${col.className ?? ''}`}
+                  >
+                    {col.render ? col.render(row) : String(valorCelda(row, col) ?? '—')}
                   </td>
                 ))}
               </tr>
             ))}
             {visibles.length === 0 && (
               <tr>
-                <td colSpan={columns.length} className="p-8 text-center text-gray-500 dark:text-gray-400">
-                  {query ? t('noResults') : emptyText}
+                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  {emptyMessage ?? t('empty')}
                 </td>
               </tr>
             )}
@@ -138,15 +171,33 @@ export function DataTable({ columns, rows, emptyText, pageSize = 20, searchable 
         </table>
       </div>
 
-      {filtradas.length > pageSize && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-600 dark:text-gray-400">
-          <span>{t('range', { from: inicio + 1, to: Math.min(inicio + pageSize, filtradas.length), total: filtradas.length })}</span>
+      {pageSize > 0 && ordenadas.length > pageSize && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          <span>
+            {t('summary', {
+              from: (paginaActual - 1) * pageSize + 1,
+              to: Math.min(paginaActual * pageSize, ordenadas.length),
+              total: ordenadas.length,
+            })}
+          </span>
           <div className="flex items-center gap-2">
-            <button type="button" disabled={paginaActual === 1} onClick={() => setPage(paginaActual - 1)} className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-700 disabled:opacity-40">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={paginaActual <= 1}
+              className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-600 transition-colors hover:border-intess hover:text-intess disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300"
+            >
               {t('prev')}
             </button>
-            <span>{t('pageOf', { page: paginaActual, total: totalPaginas })}</span>
-            <button type="button" disabled={paginaActual === totalPaginas} onClick={() => setPage(paginaActual + 1)} className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-700 disabled:opacity-40">
+            <span className="tabular-nums">
+              {t('page', { page: paginaActual, total: totalPaginas })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPaginas, p + 1))}
+              disabled={paginaActual >= totalPaginas}
+              className="rounded-full border border-slate-300 px-3 py-1 font-medium text-slate-600 transition-colors hover:border-intess hover:text-intess disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300"
+            >
               {t('next')}
             </button>
           </div>

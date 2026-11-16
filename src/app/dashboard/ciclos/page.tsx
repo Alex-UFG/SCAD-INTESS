@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { getCiclos } from '@/app/actions/ciclos';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { formatFecha } from '@/lib/format';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 import { Badge, TONO_CICLO } from '@/components/ui/badge';
 import { FormCiclo } from './form-ciclo';
 
@@ -17,7 +17,7 @@ export default async function CiclosPage() {
     requirePermiso('config.ciclos'),
   ]);
 
-  const rows: DataTableRow[] = ciclos.map((c) => ({
+  const rows: RowsTableRow[] = ciclos.map((c) => ({
     key: String(c.id_ciclo),
     cells: [
       <Link key="a" href={`/dashboard/ciclos/${c.id_ciclo}`} className="font-medium text-blue-600 hover:underline dark:text-blue-400">{c.anio}</Link>,
@@ -41,7 +41,7 @@ export default async function CiclosPage() {
         {puedeEditar && <FormCiclo />}
       </div>
 
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colAnio'), sortable: true },
           { header: t('colInicio'), sortable: true },

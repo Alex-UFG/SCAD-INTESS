@@ -1,16 +1,16 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { getTutores } from '@/app/actions/tutores';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { nombreCompleto } from '@/lib/format';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TutoresPage() {
   const [t, tutores, puedeCrear] = await Promise.all([getTranslations('tutores'), getTutores(), requirePermiso('matricula.crear')]);
 
-  const rows: DataTableRow[] = tutores.map((tutor) => ({
+  const rows: RowsTableRow[] = tutores.map((tutor) => ({
     key: tutor.dui_tutor,
     cells: [
       <span key="d" className="font-mono">{tutor.dui_tutor}</span>,
@@ -38,7 +38,7 @@ export default async function TutoresPage() {
         )}
       </div>
 
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colDui'), sortable: true },
           { header: t('colNombre'), sortable: true },

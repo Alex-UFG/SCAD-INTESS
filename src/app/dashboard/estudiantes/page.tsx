@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { getEstudiantes } from '@/app/actions/estudiantes';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { nombreCompleto } from '@/lib/format';
 import type { EstadoEstudiante } from '@/types/persona';
 import { EstadoEstudianteBadge } from '@/components/ui/estado-badge';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export default async function EstudiantesPage({ searchParams }: { searchParams: 
     requirePermiso('matricula.crear'),
   ]);
 
-  const rows: DataTableRow[] = estudiantes.map((est) => ({
+  const rows: RowsTableRow[] = estudiantes.map((est) => ({
     key: String(est.nie),
     cells: [
       est.nie,
@@ -61,7 +61,7 @@ export default async function EstudiantesPage({ searchParams }: { searchParams: 
         )}
       </div>
 
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colNie'), sortable: true },
           { header: t('colNombre'), sortable: true },

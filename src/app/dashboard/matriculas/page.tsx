@@ -5,7 +5,7 @@ import { getCiclos } from '@/app/actions/ciclos';
 import { nombreCompleto, formatFecha } from '@/lib/format';
 import type { EstadoMatricula } from '@/types/academico';
 import { inputClass } from '@/components/ui/form-field';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 import { Badge, TONO_MATRICULA } from '@/components/ui/badge';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,7 @@ export default async function MatriculasPage({ searchParams }: { searchParams: P
   const seccionSel = seccionesDelCiclo.find((s) => s.id_seccion === idSeccion);
   const vigentes = matriculas.filter((m) => m.estado === 'Vigente').length;
 
-  const rows: DataTableRow[] = matriculas.map((m) => ({
+  const rows: RowsTableRow[] = matriculas.map((m) => ({
     key: String(m.id_matricula),
     cells: [
       m.nie,
@@ -95,7 +95,7 @@ export default async function MatriculasPage({ searchParams }: { searchParams: P
           : t('resumenCiclo', { vigentes, total: matriculas.length })}
       </p>
 
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colNie'), sortable: true },
           { header: t('colEstudiante'), sortable: true },

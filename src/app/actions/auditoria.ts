@@ -1,90 +1,142 @@
-'use server';
+import type { RowDataPacket } from "mysql2";
+import { db } from "@/lib/db";
+import type { AccionAuditoria } from "@/lib/audit";
 
-import type { RowDataPacket } from 'mysql2';
-import { z } from 'zod';
-import { db } from '@/lib/db';
-import { requirePermiso } from '@/lib/session';
-import { TAMANO_PAGINA_AUDITORIA as TAMANO_PAGINA } from '@/lib/constantes';
+export const ACCIONES_AUDITORIA: readonly AccionAuditoria[] = [
+  "INSERT",
+  "UPDATE",
+  "DELETE",
+  "LOGIN",
+  "LOGOUT",
+] as const;
 
-const ACCIONES = ['INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT'] as const;
+export interface FiltrosAuditoria {
+  idUsuario?: number;
+  tabla?: string;
+  accion?: AccionAuditoria;
+  desde?: string;
+  hasta?: string;
+  page: number;
+  pageSize: number;
+}
 
-const filtroSchema = z.object({
-  usuario: z.coerce.number().int().positive().optional(),
-  tabla: z.string().trim().max(50).optional(),
-  accion: z.enum(ACCIONES).optional(),
-  desde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  hasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-});
-
-export type FiltroAuditoria = z.input<typeof filtroSchema>;
-
-export interface LogRow {
+export interface EntradaAuditoria {
   id_log: number;
   id_usuario: number;
-  email: string;
+  usuario_email: string;
+  usuario_nombre: string | null;
   tabla_afectada: string;
   id_registro: string;
-  tipo_accion: (typeof ACCIONES)[number];
+  tipo_accion: AccionAuditoria;
   datos_anteriores: unknown;
   datos_nuevos: unknown;
   ip_origen: string;
   fecha_hora: Date;
 }
 
-export interface ResultadoAuditoria {
-  rows: LogRow[];
-  total: number;
-  page: number;
-  totalPaginas: number;
-  /**Catalogo de tablas presentes en la bitacora (para el select del filtro) */
-  tablas: string[];
+interface LogRow extends RowDataPacket, Omit<EntradaAuditoria, "datos_anteriores" | "datos_nuevos"> {
+  datos_anteriores: unknown;
+  datos_nuevos: unknown;
 }
 
-/**
- * Bitacora filtrable (P-18). Solo lectura: la tabla es inmutable por diseno.
- * Los valores invalidos del filtro se descartan en vez de fallar la pagina.
- */
-export async function getAuditoria(filtroCrudo: FiltroAuditoria): Promise<ResultadoAuditoria | null> {
-  const session = await requirePermiso('auditoria.ver');
-  if (!session) return null;
+interface TotalRow extends RowDataPacket {
+  total: number;
+}
 
-  const parsed = filtroSchema.safeParse(filtroCrudo);
-  const f = parsed.success ? parsed.data : { page: 1 };
+interface OpcionRow extends RowDataPacket {
+  valor: string;
+}
 
-  const condiciones: string[] = [];
+interface UsuarioOpcionRow extends RowDataPacket {
+  id_usuario: number;
+  email: string;
+  nombre: string | null;
+}
+
+function parseJson(valor: unknown): unknown {
+  if (typeof valor !== "string") return valor;
+  try {
+    return JSON.parse(valor);
+  } catch {
+    return valor;
+  }
+}
+
+export async function getAuditoria(filtros: FiltrosAuditoria): Promise<{
+  entradas: EntradaAuditoria[];
+  total: number;
+}> {
+  const where: string[] = [];
   const params: (string | number)[] = [];
-  if (f.usuario) { condiciones.push('l.id_usuario = ?'); params.push(f.usuario); }
-  if (f.tabla) { condiciones.push('l.tabla_afectada = ?'); params.push(f.tabla); }
-  if (f.accion) { condiciones.push('l.tipo_accion = ?'); params.push(f.accion); }
-  if (f.desde) { condiciones.push('l.fecha_hora >= ?'); params.push(`${f.desde} 00:00:00`); }
-  if (f.hasta) { condiciones.push('l.fecha_hora <= ?'); params.push(`${f.hasta} 23:59:59`); }
-  const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
 
-  const [[conteo], [tablas]] = await Promise.all([
-    db.query<RowDataPacket[]>(`SELECT COUNT(*) AS total FROM log_auditoria l ${where}`, params),
-    db.query<RowDataPacket[]>('SELECT DISTINCT tabla_afectada FROM log_auditoria ORDER BY tabla_afectada'),
+  if (filtros.idUsuario) {
+    where.push("l.id_usuario = ?");
+    params.push(filtros.idUsuario);
+  }
+  if (filtros.tabla) {
+    where.push("l.tabla_afectada = ?");
+    params.push(filtros.tabla);
+  }
+  if (filtros.accion) {
+    where.push("l.tipo_accion = ?");
+    params.push(filtros.accion);
+  }
+  if (filtros.desde) {
+    where.push("l.fecha_hora >= ?");
+    params.push(`${filtros.desde} 00:00:00`);
+  }
+  if (filtros.hasta) {
+    where.push("l.fecha_hora < DATE_ADD(?, INTERVAL 1 DAY)");
+    params.push(`${filtros.hasta} 00:00:00`);
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const pageSize = Math.min(Math.max(filtros.pageSize, 1), 100);
+  const offset = (Math.max(filtros.page, 1) - 1) * pageSize;
+
+  const [[totalRows], [rows]] = await Promise.all([
+    db.query<TotalRow[]>(`SELECT COUNT(*) AS total FROM log_auditoria l ${whereSql}`, params),
+    db.query<LogRow[]>(
+      `SELECT l.id_log, l.id_usuario, u.email AS usuario_email, p.valor AS usuario_nombre,
+              l.tabla_afectada, l.id_registro, l.tipo_accion,
+              l.datos_anteriores, l.datos_nuevos, l.ip_origen, l.fecha_hora
+         FROM log_auditoria l
+         INNER JOIN usuario u ON u.id_usuario = l.id_usuario
+         LEFT JOIN usuario_preferencia p ON p.id_usuario = u.id_usuario AND p.clave = 'nombre'
+         ${whereSql}
+        ORDER BY l.fecha_hora DESC, l.id_log DESC
+        LIMIT ${pageSize} OFFSET ${offset}`,
+      params
+    ),
   ]);
-  const total = Number(conteo[0].total);
-  const totalPaginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
-  const page = Math.min(f.page, totalPaginas);
-
-  const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT l.id_log, l.id_usuario, u.email, l.tabla_afectada, l.id_registro, l.tipo_accion,
-            l.datos_anteriores, l.datos_nuevos, l.ip_origen, l.fecha_hora
-       FROM log_auditoria l
-       INNER JOIN usuario u ON u.id_usuario = l.id_usuario
-       ${where}
-      ORDER BY l.fecha_hora DESC, l.id_log DESC
-      LIMIT ? OFFSET ?`,
-    [...params, TAMANO_PAGINA, (page - 1) * TAMANO_PAGINA]
-  );
 
   return {
-    rows: rows as LogRow[],
-    total,
-    page,
-    totalPaginas,
-    tablas: tablas.map((t) => t.tabla_afectada as string),
+    total: totalRows[0]?.total ?? 0,
+    entradas: rows.map((r) => ({
+      ...r,
+      datos_anteriores: parseJson(r.datos_anteriores),
+      datos_nuevos: parseJson(r.datos_nuevos),
+    })),
+  };
+}
+
+export async function getOpcionesAuditoria(): Promise<{
+  tablas: string[];
+  usuarios: { id_usuario: number; email: string; nombre: string | null }[];
+}> {
+  const [[tablas], [usuarios]] = await Promise.all([
+    db.query<OpcionRow[]>(
+      "SELECT DISTINCT tabla_afectada AS valor FROM log_auditoria ORDER BY tabla_afectada"
+    ),
+    db.query<UsuarioOpcionRow[]>(
+      `SELECT u.id_usuario, u.email, p.valor AS nombre
+         FROM usuario u
+         LEFT JOIN usuario_preferencia p ON p.id_usuario = u.id_usuario AND p.clave = 'nombre'
+        ORDER BY p.valor, u.email`
+    ),
+  ]);
+  return {
+    tablas: tablas.map((r) => r.valor),
+    usuarios: usuarios.map((u) => ({ id_usuario: u.id_usuario, email: u.email, nombre: u.nombre })),
   };
 }

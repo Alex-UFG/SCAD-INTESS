@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 import { getSecciones, getCiclosAbiertos } from '@/app/actions/secciones';
 import { getEspecialidadesActivas, getDocentes } from '@/app/actions/docentes';
-import { requirePermiso } from '@/lib/session';
-import { DataTable, type DataTableRow } from '@/components/ui/data-table';
+import { requirePermiso } from '@/lib/permisos';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 import { Badge, TONO_CICLO } from '@/components/ui/badge';
 import { FormSeccion } from './form-seccion';
 
@@ -24,7 +24,7 @@ export default async function SeccionesPage() {
   ]);
   const puedeEditar = Boolean(editor);
 
-  const rows: DataTableRow[] = secciones.map((s) => ({
+  const rows: RowsTableRow[] = secciones.map((s) => ({
     key: String(s.id_seccion),
     cells: [
       <span key="c">{s.ciclo_anio} <Badge tono={TONO_CICLO[s.ciclo_estado]}>{s.ciclo_estado}</Badge></span>,
@@ -56,7 +56,7 @@ export default async function SeccionesPage() {
         {puedeEditar && <FormSeccion especialidades={especialidades} ciclos={ciclos} docentes={docentes} trigger={t('nueva')} />}
       </div>
 
-      <DataTable
+      <RowsTable
         columns={[
           { header: t('colCiclo'), sortable: true },
           { header: t('colGrado'), sortable: true },

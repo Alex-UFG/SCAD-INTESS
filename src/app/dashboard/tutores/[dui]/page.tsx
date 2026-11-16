@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { getTutorPorDui, getEstudiantesDelTutor } from '@/app/actions/tutores';
-import { requirePermiso } from '@/lib/session';
+import { requirePermiso } from '@/lib/permisos';
 import { nombreCompleto } from '@/lib/format';
 import { DUI_REGEX } from '@/lib/validations/shared';
 import { EstadoEstudianteBadge } from '@/components/ui/estado-badge';

@@ -6,7 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { RowDataPacket } from 'mysql2';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { requireSession } from '@/lib/session';
-import { tienePermiso } from '@/lib/permisos';
+import { getPermisosDeRol } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { DUI_REGEX, TELEFONO_REGEX, FECHA_ISO_REGEX } from '@/lib/validations/shared';
 import type { ActionState } from '@/types/actions';
@@ -223,7 +223,7 @@ export async function editarPerfilDocente(_prev: ActionState, formData: FormData
     if (!rows[0]) { await connection.rollback(); return { success: false, message: t('errors.noExiste') }; }
 
     const esPropio = rows[0].id_usuario === idUsuario;
-    if (!esPropio && !(await tienePermiso(session.user.rol, 'usuarios.editar'))) {
+    if (!esPropio && !(await getPermisosDeRol(session.user.rol)).has('usuarios.editar')) {
       await connection.rollback();
       return { success: false, message: t('errors.sinPermiso') };
     }
@@ -260,7 +260,7 @@ export async function editarPerfilDocente(_prev: ActionState, formData: FormData
 export async function setEstadoDocente(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const t = await getTranslations('docentes');
   const session = await requireSession();
-  if (!session || !(await tienePermiso(session.user.rol, 'usuarios.editar'))) {
+  if (!session || !(await getPermisosDeRol(session.user.rol)).has('usuarios.editar')) {
     return { success: false, message: t('errors.sinPermiso') };
   }
   const parsed = z.object({ dui_docente: z.string().regex(DUI_REGEX), estado: z.enum(ESTADOS_DOCENTE) })
