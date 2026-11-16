@@ -251,7 +251,8 @@
     "sinDocenteGuia": "No homeroom teacher",
     "vigentesAviso": "{vigentes} student(s) enrolled: capacity cannot be lower.",
     "colOcupacion": "Enrolled / Capacity",
-    "actualizada": "Section updated."
+    "actualizada": "Section updated.",
+    "colAcciones": "Actions"
   },
   "estudiantes": {
     "title": "Students",

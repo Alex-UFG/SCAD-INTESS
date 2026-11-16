@@ -251,7 +251,8 @@
     "sinDocenteGuia": "Sin docente guía",
     "vigentesAviso": "{vigentes} estudiante(s) matriculado(s): la capacidad no puede ser menor.",
     "colOcupacion": "Matriculados / Capacidad",
-    "actualizada": "Sección actualizada."
+    "actualizada": "Sección actualizada.",
+    "colAcciones": "Acciones"
   },
   "estudiantes": {
     "title": "Estudiantes",
