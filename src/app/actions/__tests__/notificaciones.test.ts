@@ -11,7 +11,7 @@ vi.mock("next-intl/server", () => ({ getTranslations: async () => (k: string) =>
 
 const { getNotificaciones, contarNoLeidas, marcarLeida, marcarTodasLeidas } = await import("@/app/actions/notificaciones");
 const { cambiarEstadoPeriodo } = await import("@/app/actions/ciclos");
-const { notificarPorPermiso, crearNotificacion } = await import("@/lib/notificaciones");
+const { notificarPorPermiso } = await import("@/lib/notificaciones");
 
 const ADMIN = 1;
 let fx: Fixtures;
@@ -66,6 +66,11 @@ describe.skipIf(!process.env.DB_HOST)("notificaciones", () => {
     expect(propias).toHaveLength(1);
 
     const ajena = (await filas(ADMIN))[0].id_notificacion;
+    estado.sesion = null;
+    expect((await marcarLeida({}, fd({ id_notificacion: ajena }))).message).toBe("errors.noAutorizado");
+    estado.sesion = sesionDe(5, fx.idUsuarioDocente);
+    expect((await marcarLeida({}, fd({ id_notificacion: "x" }))).message).toBe("errors.notificacionInvalida");
+
     await marcarLeida({}, fd({ id_notificacion: ajena }));
     expect((await filas(ADMIN))[0].leida).toBe(0);
 
@@ -75,8 +80,10 @@ describe.skipIf(!process.env.DB_HOST)("notificaciones", () => {
   });
 
   it("marcarTodasLeidas solo marca las del usuario", async () => {
-    await crearNotificacion(db, { idUsuario: fx.idUsuarioDocente, tipo: "Citacion", titulo: "a", mensaje: "b" });
-    await crearNotificacion(db, { idUsuario: fx.idUsuarioDocente, tipo: "Citacion", titulo: "c", mensaje: "d" });
+    await db.execute(
+      "INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje) VALUES (?, 'Citacion', 'a', 'b'), (?, 'Citacion', 'c', 'd')",
+      [fx.idUsuarioDocente, fx.idUsuarioDocente]
+    );
     expect(await contarNoLeidas()).toBe(2);
     await marcarTodasLeidas();
     expect(await contarNoLeidas()).toBe(0);
@@ -93,5 +100,9 @@ describe.skipIf(!process.env.DB_HOST)("notificaciones", () => {
     );
     expect(r).toHaveLength(1);
     expect(r[0]).toMatchObject({ referencia_tipo: "periodo_evaluativo", referencia_id: String(PERIODO_ABIERTO_SEED) });
+
+    estado.sesion = sesionDe(5, fx.idUsuarioDocente);
+    const [p] = await db.query<RowDataPacket[]>("SELECT numero FROM periodo_evaluativo WHERE id_periodo = ?", [PERIODO_ABIERTO_SEED]);
+    expect((await getNotificaciones())[0].periodo).toBe(p[0].numero);
   });
 });

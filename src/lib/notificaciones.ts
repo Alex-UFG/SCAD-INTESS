@@ -11,17 +11,6 @@ export interface DatosNotificacion {
   referenciaId?: string | number;
 }
 
-export async function crearNotificacion(
-  ejecutor: Ejecutor,
-  { idUsuario, tipo, titulo, mensaje, referenciaTipo, referenciaId }: DatosNotificacion & { idUsuario: number }
-): Promise<void> {
-  await ejecutor.execute(
-    `INSERT INTO notificacion (id_usuario, tipo, titulo, mensaje, referencia_tipo, referencia_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [idUsuario, tipo, titulo, mensaje, referenciaTipo ?? null, referenciaId === undefined ? null : String(referenciaId)]
-  );
-}
-
 /**Una notificacion para cada usuario Activo cuyo rol tiene el permiso */
 export async function notificarPorPermiso(
   ejecutor: Ejecutor,

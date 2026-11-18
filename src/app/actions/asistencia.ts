@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { RowDataPacket } from 'mysql2';
 import { db, getTransaction } from '@/lib/db';
-import { requirePermiso } from '@/lib/permisos';
+import { requirePermiso, ROL_DOCENTE } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { guardarPaseListaSchema } from '@/lib/validations/asistencia';
 import { UMBRAL_INASISTENCIA, hoyISO, porcentajeAsistencia, type EstadoAsistencia } from '@/lib/asistencia';
@@ -60,20 +60,22 @@ function restarDias(fecha: string, dias: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/**Docente: solo sus cargas. Sin perfil docente (direccion/admin): cualquiera. Devuelve la carga y si el usuario es docente */
-async function cargaAccesible(idCarga: number, idUsuario: number): Promise<{ carga: CargaRow; esDocente: boolean } | null> {
-  const [carga, docente] = await Promise.all([getCargaPorId(idCarga), getDocentePorUsuario(idUsuario)]);
+async function cargaAccesible(idCarga: number, idUsuario: number, rol: number): Promise<{ carga: CargaRow; esDocente: boolean } | null> {
+  const esDocente = rol === ROL_DOCENTE;
+  const [carga, docente] = await Promise.all([getCargaPorId(idCarga), esDocente ? getDocentePorUsuario(idUsuario) : null]);
   if (!carga) return null;
-  if (docente && carga.dui_docente !== docente.dui_docente) return null;
-  return { carga, esDocente: !!docente };
+  if (esDocente && carga.dui_docente !== docente?.dui_docente) return null;
+  return { carga, esDocente };
 }
 
 const NOMBRE_ESTUDIANTE = "CONCAT_WS(' ', e.primer_nombre, e.segundo_nombre, e.primer_apellido, e.segundo_apellido)";
 
+const CARGAS_DEL_USUARIO = 'carga_academica cd INNER JOIN docente d ON d.dui_docente = cd.dui_docente AND d.id_usuario = ?';
+
 export async function getPaseLista(idCarga: number, fecha: string): Promise<PaseLista | null> {
   const session = await requirePermiso('asistencia.ver');
   if (!session) return null;
-  const acceso = await cargaAccesible(idCarga, Number(session.user.id));
+  const acceso = await cargaAccesible(idCarga, Number(session.user.id), session.user.rol);
   if (!acceso) return null;
   const { carga } = acceso;
 
@@ -110,7 +112,7 @@ export async function guardarPaseLista(_prev: ActionState, formData: FormData): 
   }
   const d = parsed.data;
 
-  const acceso = await cargaAccesible(d.id_carga, Number(session.user.id));
+  const acceso = await cargaAccesible(d.id_carga, Number(session.user.id), session.user.rol);
   if (!acceso) return { success: false, message: t('errors.cargaNoDisponible') };
   const { carga, esDocente } = acceso;
 
@@ -136,10 +138,9 @@ export async function guardarPaseLista(_prev: ActionState, formData: FormData): 
 
     const [previos] = await connection.query<RowDataPacket[]>(
       'SELECT nie, estado FROM asistencia WHERE cod_materia = ? AND fecha = ? AND nie IN (?) FOR UPDATE',
-      [carga.cod_materia, d.fecha, [...validos]]
+      [carga.cod_materia, d.fecha, d.registros.map((r) => r.nie)]
     );
-    const niesEnviados = new Set(d.registros.map((r) => r.nie));
-    const anterior = Object.fromEntries(previos.filter((r) => niesEnviados.has(Number(r.nie))).map((r) => [r.nie, r.estado]));
+    const anterior = Object.fromEntries(previos.map((r) => [r.nie, r.estado]));
 
     for (const r of d.registros) {
       await connection.execute(
@@ -170,14 +171,35 @@ export async function guardarPaseLista(_prev: ActionState, formData: FormData): 
   }
 }
 
-async function consultarResumen(idCiclo: number, idSeccion?: number, desde?: string, hasta?: string): Promise<ResumenAsistenciaRow[]> {
-  const cond = ["m.id_ciclo = ?", "m.estado = 'Vigente'"];
+interface FiltroResumen {
+  idCiclo: number;
+  idSeccion?: number;
+  desde?: string;
+  hasta?: string;
+  idUsuarioDocente?: number;
+}
+
+function fuenteResumen({ idCiclo, idSeccion, desde, hasta, idUsuarioDocente }: FiltroResumen) {
   const params: (number | string)[] = [idCiclo];
-  if (idSeccion) { cond.push('m.id_seccion = ?'); params.push(idSeccion); }
   const fechas: string[] = [];
-  const pf: string[] = [];
-  if (desde) { fechas.push('a.fecha >= ?'); pf.push(desde); }
-  if (hasta) { fechas.push('a.fecha <= ?'); pf.push(hasta); }
+  if (desde) { fechas.push('AND a.fecha >= ?'); params.push(desde); }
+  if (hasta) { fechas.push('AND a.fecha <= ?'); params.push(hasta); }
+  const cond = ['m.id_ciclo = ?', "m.estado = 'Vigente'"];
+  params.push(idCiclo);
+  if (idSeccion) { cond.push('m.id_seccion = ?'); params.push(idSeccion); }
+  if (idUsuarioDocente) {
+    cond.push(`EXISTS (SELECT 1 FROM ${CARGAS_DEL_USUARIO} WHERE cd.id_seccion = m.id_seccion AND cd.id_ciclo = m.id_ciclo)`);
+    params.push(idUsuarioDocente);
+  }
+  const joins = `INNER JOIN ciclo_escolar ce ON ce.id_ciclo = m.id_ciclo
+       LEFT JOIN (SELECT DISTINCT id_seccion, cod_materia FROM carga_academica WHERE id_ciclo = ?) ca ON ca.id_seccion = m.id_seccion
+       LEFT JOIN asistencia a ON a.nie = m.nie AND a.cod_materia = ca.cod_materia
+            AND a.fecha BETWEEN ce.fecha_inicio AND ce.fecha_fin ${fechas.join(' ')}`;
+  return { joins, where: cond.join(' AND '), params };
+}
+
+async function consultarResumen(filtro: FiltroResumen): Promise<ResumenAsistenciaRow[]> {
+  const { joins, where, params } = fuenteResumen(filtro);
   const [rows] = await db.query<RowDataPacket[]>(
     `SELECT e.nie, ${NOMBRE_ESTUDIANTE} AS nombre, s.nombre AS seccion,
             COUNT(a.id_asistencia) AS total,
@@ -188,15 +210,11 @@ async function consultarResumen(idCiclo: number, idSeccion?: number, desde?: str
        FROM matricula m
        INNER JOIN estudiante e ON e.nie = m.nie
        INNER JOIN seccion s ON s.id_seccion = m.id_seccion
-       INNER JOIN ciclo_escolar ce ON ce.id_ciclo = m.id_ciclo
-       LEFT JOIN asistencia a ON a.nie = m.nie
-            AND a.cod_materia IN (SELECT ca.cod_materia FROM carga_academica ca WHERE ca.id_seccion = m.id_seccion AND ca.id_ciclo = m.id_ciclo)
-            AND a.fecha BETWEEN ce.fecha_inicio AND ce.fecha_fin
-            ${fechas.map((f) => `AND ${f}`).join(' ')}
-      WHERE ${cond.join(' AND ')}
+       ${joins}
+      WHERE ${where}
       GROUP BY e.nie, nombre, s.nombre, s.grado
       ORDER BY s.grado, s.nombre, e.primer_apellido, e.primer_nombre`,
-    [...pf, ...params]
+    params
   );
   return rows.map((r) => {
     const c = { total: Number(r.total), presentes: Number(r.presentes), tardanzas: Number(r.tardanzas), justificados: Number(r.justificados) };
@@ -205,26 +223,39 @@ async function consultarResumen(idCiclo: number, idSeccion?: number, desde?: str
 }
 
 export async function getResumenAsistencia(filtro: { idCiclo: number; idSeccion?: number; desde?: string; hasta?: string }): Promise<ResumenAsistenciaRow[]> {
-  if (!(await requirePermiso('asistencia.ver'))) return [];
-  return consultarResumen(filtro.idCiclo, filtro.idSeccion, filtro.desde, filtro.hasta);
+  const session = await requirePermiso('asistencia.ver');
+  if (!session) return [];
+  return consultarResumen({
+    idCiclo: filtro.idCiclo,
+    idSeccion: filtro.idSeccion,
+    desde: filtro.desde,
+    hasta: filtro.hasta,
+    idUsuarioDocente: session.user.rol === ROL_DOCENTE ? Number(session.user.id) : undefined,
+  });
 }
 
 export async function getDetalleAsistencia(nie: number, idCiclo: number): Promise<DetalleAsistenciaRow[]> {
-  if (!(await requirePermiso('asistencia.ver'))) return [];
+  const session = await requirePermiso('asistencia.ver');
+  if (!session) return [];
+  const esDocente = session.user.rol === ROL_DOCENTE;
+  const alcance = esDocente
+    ? `AND EXISTS (SELECT 1 FROM matricula mt INNER JOIN ${CARGAS_DEL_USUARIO}
+                    WHERE mt.nie = a.nie AND mt.id_ciclo = c.id_ciclo AND cd.id_seccion = mt.id_seccion AND cd.id_ciclo = mt.id_ciclo)`
+    : '';
   const [rows] = await db.query<RowDataPacket[]>(
     `SELECT DATE_FORMAT(a.fecha, '%Y-%m-%d') AS fecha, m.nombre AS materia, a.estado, a.observacion
        FROM asistencia a
        INNER JOIN materia m ON m.cod_materia = a.cod_materia
        INNER JOIN ciclo_escolar c ON c.id_ciclo = ? AND a.fecha BETWEEN c.fecha_inicio AND c.fecha_fin
-      WHERE a.nie = ?
+      WHERE a.nie = ? ${alcance}
       ORDER BY a.fecha DESC, m.nombre`,
-    [idCiclo, nie]
+    esDocente ? [idCiclo, nie, Number(session.user.id)] : [idCiclo, nie]
   );
   return rows as DetalleAsistenciaRow[];
 }
 
-export async function getIndicadoresAsistencia(): Promise<IndicadoresAsistencia> {
-  if (!(await requirePermiso('asistencia.ver'))) return { ausenciasHoy: 0, bajoUmbral: 0 };
+export async function getIndicadoresAsistencia(): Promise<IndicadoresAsistencia | null> {
+  if (!(await requirePermiso('asistencia.ver'))) return null;
   const [[ausencias], [periodo]] = await Promise.all([
     db.query<RowDataPacket[]>("SELECT COUNT(*) AS n FROM asistencia WHERE estado = 'Ausente' AND fecha = ?", [hoyISO()]),
     db.query<RowDataPacket[]>(
@@ -235,8 +266,17 @@ export async function getIndicadoresAsistencia(): Promise<IndicadoresAsistencia>
   ]);
   let bajoUmbral = 0;
   if (periodo[0]) {
-    const resumen = await consultarResumen(periodo[0].id_ciclo, undefined, periodo[0].desde, periodo[0].hasta);
-    bajoUmbral = resumen.filter((r) => r.porcentaje !== null && r.porcentaje < UMBRAL_INASISTENCIA).length;
+    const { joins, where, params } = fuenteResumen({ idCiclo: periodo[0].id_ciclo, desde: periodo[0].desde, hasta: periodo[0].hasta });
+    const [[bajo]] = await db.query<RowDataPacket[]>(
+      `SELECT COUNT(*) AS n FROM (
+         SELECT m.nie FROM matricula m ${joins}
+          WHERE ${where}
+          GROUP BY m.nie
+         HAVING ROUND(SUM(a.estado IN ('Presente', 'Tardanza', 'Justificado')) / COUNT(a.id_asistencia) * 100, 2) < ?
+       ) bajo`,
+      [...params, UMBRAL_INASISTENCIA]
+    );
+    bajoUmbral = Number(bajo.n);
   }
   return { ausenciasHoy: Number(ausencias[0].n), bajoUmbral };
 }

@@ -6,13 +6,13 @@ import { getCiclos } from '@/app/actions/ciclos';
 import { getEstudiantePorNie } from '@/app/actions/estudiantes';
 import { requirePermiso } from '@/lib/permisos';
 import { nombreCompleto } from '@/lib/format';
-import { ESTADOS_ASISTENCIA, UMBRAL_INASISTENCIA, porcentajeAsistencia } from '@/lib/asistencia';
+import { UMBRAL_INASISTENCIA, porcentajeAsistencia, type EstadoAsistencia } from '@/lib/asistencia';
 import { Badge, type Tono } from '@/components/ui/badge';
 import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 
 export const dynamic = 'force-dynamic';
 
-const TONO_ESTADO: Record<(typeof ESTADOS_ASISTENCIA)[number], Tono> = {
+const TONO_ESTADO: Record<EstadoAsistencia, Tono> = {
   Presente: 'verde',
   Ausente: 'rojo',
   Tardanza: 'amarillo',

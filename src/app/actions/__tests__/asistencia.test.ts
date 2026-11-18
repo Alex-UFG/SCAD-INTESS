@@ -107,22 +107,40 @@ describe.skipIf(!process.env.DB_HOST)("acciones de asistencia", () => {
     expect((await guardarPaseLista({}, fd(fx.idCarga, hace(1), { [NIES[0]]: ["Presente"] }))).message).toBe("errors.sinPermiso");
     expect(await getPaseLista(fx.idCarga, hace(1))).not.toBeNull();
 
+    estado.sesion = sesionDe(5, fx.idUsuarioDocente);
+    expect((await getDetalleAsistencia(NIES[0], CICLO_SEED)).length).toBeGreaterThan(0);
+
     // otro usuario docente: no es dueno de la carga
     const [u] = await db.execute<import("mysql2").ResultSetHeader>(
       "INSERT INTO usuario (email, password_hash, id_rol, estado) VALUES ('otro.docente.zzt@intess.edu.sv', 'x', 5, 'Activo')"
     );
-    await db.execute(
-      "INSERT INTO docente (dui_docente, id_usuario, primer_nombre, primer_apellido, telefono, fecha_ingreso) VALUES ('99000000-8', ?, 'Otro', 'Docente', '7000-0000', '2020-01-01')",
-      [u.insertId]
-    );
-    try {
-      estado.sesion = sesionDe(5, u.insertId);
+    const sinAcceso = async () => {
       expect((await guardarPaseLista({}, fd(fx.idCarga, hace(1), { [NIES[0]]: ["Presente"] }))).message).toBe("errors.cargaNoDisponible");
       expect(await getPaseLista(fx.idCarga, hace(1))).toBeNull();
+      expect(await getDetalleAsistencia(NIES[0], CICLO_SEED)).toEqual([]);
+      expect(await getResumenAsistencia({ idCiclo: CICLO_SEED, idSeccion: fx.idSeccion })).toEqual([]);
+    };
+    try {
+      estado.sesion = sesionDe(5, u.insertId);
+      await sinAcceso();
+      await db.execute(
+        "INSERT INTO docente (dui_docente, id_usuario, primer_nombre, primer_apellido, telefono, fecha_ingreso) VALUES ('99000000-8', ?, 'Otro', 'Docente', '7000-0000', '2020-01-01')",
+        [u.insertId]
+      );
+      await sinAcceso();
     } finally {
       await db.execute("DELETE FROM docente WHERE dui_docente = '99000000-8'");
       await db.execute("DELETE FROM usuario WHERE id_usuario = ?", [u.insertId]);
     }
+  });
+
+  it("auditoria: guardar otro estudiante en la misma fecha es INSERT, no UPDATE", async () => {
+    estado.sesion = sesionDe(1);
+    const fecha = hace(6);
+    const antes = (await auditorias()).length;
+    await guardarPaseLista({}, fd(fx.idCarga, fecha, { [NIES[0]]: ["Presente"] }));
+    await guardarPaseLista({}, fd(fx.idCarga, fecha, { [NIES[1]]: ["Presente"] }));
+    expect((await auditorias()).slice(antes).map((a) => a.tipo_accion)).toEqual(["INSERT", "INSERT"]);
   });
 
   it("solo estudiantes con matricula vigente en la seccion", async () => {
@@ -150,11 +168,12 @@ describe.skipIf(!process.env.DB_HOST)("acciones de asistencia", () => {
     expect(det[0]).toMatchObject({ fecha: HOY, estado: "Ausente", materia: "Materia de prueba" });
 
     const ind = await getIndicadoresAsistencia();
-    expect(ind.ausenciasHoy).toBeGreaterThanOrEqual(1);
-    expect(ind.bajoUmbral).toBeGreaterThanOrEqual(1);
+    expect(ind?.ausenciasHoy).toBeGreaterThanOrEqual(1);
+    expect(ind?.bajoUmbral).toBeGreaterThanOrEqual(1);
 
     estado.sesion = sesionDe(6);
     expect(await getResumenAsistencia({ idCiclo: CICLO_SEED })).toEqual([]);
+    expect(await getIndicadoresAsistencia()).toBeNull();
   });
 
   it("resumen: no cuenta asistencias con fecha fuera del ciclo", async () => {

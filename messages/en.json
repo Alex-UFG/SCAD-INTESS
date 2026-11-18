@@ -849,6 +849,11 @@
     "leida": "Read",
     "noLeida": "Unread",
     "empty": "You have no notifications.",
+    "errors": {
+      "noAutorizado": "Unauthorized or expired session.",
+      "notificacionInvalida": "Invalid notification.",
+      "errorServidor": "A server error occurred."
+    },
     "tipos": {
       "Riesgo_Academico": "Academic risk",
       "Reincidencia": "Repeat offense",

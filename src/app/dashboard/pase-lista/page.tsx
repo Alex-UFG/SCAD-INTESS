@@ -3,8 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { getPaseLista } from '@/app/actions/asistencia';
 import { getCargas, getCargasDelDocente } from '@/app/actions/cargas';
 import { getCicloActivo } from '@/app/actions/ciclos';
-import { getDocentePorUsuario } from '@/app/actions/docentes';
-import { requirePermiso } from '@/lib/permisos';
+import { requirePermiso, ROL_DOCENTE } from '@/lib/permisos';
 import { hoyISO } from '@/lib/asistencia';
 import { FECHA_ISO_REGEX } from '@/lib/validations/shared';
 import { inputClass, submitButtonClass } from '@/components/ui/form-field';
@@ -24,9 +23,9 @@ export default async function PaseListaPage({ searchParams }: { searchParams: Pr
   const t = await getTranslations('paseLista');
   const idUsuario = Number(session.user.id);
 
-  const docente = await getDocentePorUsuario(idUsuario);
+  const esDocente = session.user.rol === ROL_DOCENTE;
   let cargas;
-  if (docente) {
+  if (esDocente) {
     cargas = await getCargasDelDocente(idUsuario);
   } else {
     const ciclo = await getCicloActivo();
@@ -54,7 +53,7 @@ export default async function PaseListaPage({ searchParams }: { searchParams: Pr
               <option value="" disabled>{t('seleccioneCarga')}</option>
               {cargas.map((c) => (
                 <option key={c.id_carga} value={c.id_carga}>
-                  {c.materia} — {c.grado}° {c.seccion}{docente ? '' : ` (${c.docente})`}
+                  {c.materia} — {c.grado}° {c.seccion}{esDocente ? '' : ` (${c.docente})`}
                 </option>
               ))}
             </select>

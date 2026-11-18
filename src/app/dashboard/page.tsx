@@ -4,7 +4,6 @@ import { getTranslations } from "next-intl/server";
 import type { RowDataPacket } from "mysql2";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { getPermisosDeRol } from "@/lib/permisos";
 import { getIndicadoresAsistencia } from "@/app/actions/asistencia";
 
 interface CountRow extends RowDataPacket {
@@ -28,10 +27,6 @@ export default async function DashboardPage() {
 
   const t = await getTranslations("dash");
 
-  const verAsistencia = (await getPermisosDeRol(session.user.rol)).has(
-    "asistencia.ver"
-  );
-
   const [estudiantes, docentes, matriculas, incidencias, roles, asistencia] =
     await Promise.all([
       contar("estudiante"),
@@ -43,7 +38,7 @@ export default async function DashboardPage() {
           session.user.rol,
         ])
         .then(([r]) => r),
-      verAsistencia ? getIndicadoresAsistencia() : null,
+      getIndicadoresAsistencia(),
     ]);
 
   const stats = [

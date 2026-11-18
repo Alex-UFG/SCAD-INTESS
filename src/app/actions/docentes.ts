@@ -6,15 +6,11 @@ import { getTranslations } from 'next-intl/server';
 import { RowDataPacket } from 'mysql2';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { requireSession } from '@/lib/session';
-import { getPermisosDeRol } from '@/lib/permisos';
+import { getPermisosDeRol, ROL_DOCENTE } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { DUI_REGEX, TELEFONO_REGEX, FECHA_ISO_REGEX } from '@/lib/validations/shared';
 import type { ActionState } from '@/types/actions';
 import { ESTADOS_DOCENTE, type EstadoDocente } from '@/lib/constantes';
-
-// Rol 5 = Docente (002_seed.sql). El perfil se liga al id_usuario de la sesion,
-// asi que solo un docente puede completar el suyo.
-const ROL_DOCENTE = 5;
 
 export interface Especialidad {
   id_especialidad: number;

@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getResumenAsistencia } from '@/app/actions/asistencia';
+import { getCargasDelDocente } from '@/app/actions/cargas';
 import { getCiclos } from '@/app/actions/ciclos';
 import { getSecciones } from '@/app/actions/secciones';
-import { requirePermiso } from '@/lib/permisos';
+import { requirePermiso, ROL_DOCENTE } from '@/lib/permisos';
 import { UMBRAL_INASISTENCIA } from '@/lib/asistencia';
 import { FECHA_ISO_REGEX } from '@/lib/validations/shared';
 import { inputClass, submitButtonClass } from '@/components/ui/form-field';
@@ -20,12 +21,17 @@ const fechaValida = (v: string | undefined) => (v && FECHA_ISO_REGEX.test(v) ? v
 
 export default async function AsistenciaPage({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams;
-  if (!(await requirePermiso('asistencia.ver'))) redirect('/dashboard');
+  const session = await requirePermiso('asistencia.ver');
+  if (!session) redirect('/dashboard');
 
-  const [t, ciclos] = await Promise.all([getTranslations('asistencia'), getCiclos()]);
+  const [t, tEstadosCiclo, ciclos] = await Promise.all([getTranslations('asistencia'), getTranslations('ciclos.estados'), getCiclos()]);
   const cicloParam = Number(primero(sp.ciclo));
   const ciclo = ciclos.find((c) => c.id_ciclo === cicloParam) ?? ciclos.find((c) => c.estado === 'Activo') ?? ciclos[0];
-  const secciones = ciclo ? await getSecciones(ciclo.id_ciclo) : [];
+  let secciones = ciclo ? await getSecciones(ciclo.id_ciclo) : [];
+  if (ciclo && session.user.rol === ROL_DOCENTE) {
+    const propias = new Set((await getCargasDelDocente(Number(session.user.id), ciclo.id_ciclo)).map((c) => c.id_seccion));
+    secciones = secciones.filter((s) => propias.has(s.id_seccion));
+  }
   const seccion = secciones.find((s) => s.id_seccion === Number(primero(sp.seccion)));
   const desde = fechaValida(primero(sp.desde));
   const hasta = fechaValida(primero(sp.hasta));
@@ -60,7 +66,7 @@ export default async function AsistenciaPage({ searchParams }: { searchParams: P
           <label htmlFor="ciclo" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('ciclo')}</label>
           <select id="ciclo" name="ciclo" defaultValue={ciclo?.id_ciclo ?? ''} className={inputClass}>
             {ciclos.map((c) => (
-              <option key={c.id_ciclo} value={c.id_ciclo}>{c.anio} ({c.estado})</option>
+              <option key={c.id_ciclo} value={c.id_ciclo}>{c.anio} ({tEstadosCiclo(c.estado)})</option>
             ))}
           </select>
         </div>

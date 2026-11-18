@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
 import { RowDataPacket } from 'mysql2';
 import { db } from '@/lib/db';
 import { requireSession } from '@/lib/session';
@@ -15,6 +16,7 @@ export interface NotificacionRow {
   leida: boolean;
   /**YYYY-MM-DD HH:mm (UTC) */
   creada_en: string;
+  periodo: number | null;
 }
 
 async function exigirSesion() {
@@ -27,8 +29,11 @@ async function exigirSesion() {
 export async function getNotificaciones(): Promise<NotificacionRow[]> {
   const idUsuario = await exigirSesion();
   const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT id_notificacion, tipo, titulo, mensaje, leida, DATE_FORMAT(creada_en, '%Y-%m-%d %H:%i') AS creada_en
-       FROM notificacion WHERE id_usuario = ? ORDER BY creada_en DESC, id_notificacion DESC LIMIT 50`,
+    `SELECT n.id_notificacion, n.tipo, n.titulo, n.mensaje, n.leida,
+            DATE_FORMAT(n.creada_en, '%Y-%m-%d %H:%i') AS creada_en, p.numero AS periodo
+       FROM notificacion n
+       LEFT JOIN periodo_evaluativo p ON n.referencia_tipo = 'periodo_evaluativo' AND p.id_periodo = n.referencia_id
+      WHERE n.id_usuario = ? ORDER BY n.creada_en DESC, n.id_notificacion DESC LIMIT 50`,
     [idUsuario]
   );
   return rows.map((r) => ({ ...(r as NotificacionRow), leida: Boolean(r.leida) }));
@@ -46,17 +51,34 @@ export async function contarNoLeidas(): Promise<number> {
 }
 
 export async function marcarLeida(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const idUsuario = await exigirSesion();
+  const t = await getTranslations('notificaciones');
+  const session = await requireSession();
+  if (!session) return { success: false, message: t('errors.noAutorizado') };
+
   const id = Number(formData.get('id_notificacion'));
-  if (!Number.isInteger(id) || id <= 0) return { success: false };
-  await db.execute('UPDATE notificacion SET leida = TRUE WHERE id_notificacion = ? AND id_usuario = ?', [id, idUsuario]);
+  if (!Number.isInteger(id) || id <= 0) return { success: false, message: t('errors.notificacionInvalida') };
+
+  try {
+    await db.execute('UPDATE notificacion SET leida = TRUE WHERE id_notificacion = ? AND id_usuario = ?', [id, Number(session.user.id)]);
+  } catch (error) {
+    console.error('Error marcando notificacion como leida:', error);
+    return { success: false, message: t('errors.errorServidor') };
+  }
   revalidatePath('/', 'layout'); // refresca tambien el contador del encabezado
   return { success: true };
 }
 
 export async function marcarTodasLeidas(): Promise<ActionState> {
-  const idUsuario = await exigirSesion();
-  await db.execute('UPDATE notificacion SET leida = TRUE WHERE id_usuario = ? AND leida = FALSE', [idUsuario]);
+  const t = await getTranslations('notificaciones');
+  const session = await requireSession();
+  if (!session) return { success: false, message: t('errors.noAutorizado') };
+
+  try {
+    await db.execute('UPDATE notificacion SET leida = TRUE WHERE id_usuario = ? AND leida = FALSE', [Number(session.user.id)]);
+  } catch (error) {
+    console.error('Error marcando notificaciones como leidas:', error);
+    return { success: false, message: t('errors.errorServidor') };
+  }
   revalidatePath('/', 'layout'); // refresca tambien el contador del encabezado
   return { success: true };
 }

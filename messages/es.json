@@ -849,6 +849,11 @@
     "leida": "Leída",
     "noLeida": "No leída",
     "empty": "No tienes notificaciones.",
+    "errors": {
+      "noAutorizado": "Sesión no autorizada o caducada.",
+      "notificacionInvalida": "Notificación no válida.",
+      "errorServidor": "Ocurrió un error en el servidor."
+    },
     "tipos": {
       "Riesgo_Academico": "Riesgo académico",
       "Reincidencia": "Reincidencia",
