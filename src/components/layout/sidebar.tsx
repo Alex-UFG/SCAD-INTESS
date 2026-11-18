@@ -9,7 +9,8 @@ import type { PermisoCodigo } from "@/lib/permisos";
 interface MenuItem {
   key: string;
   href: string;
-  permiso?: PermisoCodigo;
+  /**Con una lista basta tener cualquiera de los permisos */
+  permiso?: PermisoCodigo | PermisoCodigo[];
   roles?: number[];
   icon: ReactNode;
 }
@@ -221,7 +222,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "incidencias",
         href: "/dashboard/incidencias",
-        permiso: "disciplina.ver",
+        permiso: ["disciplina.ver", "disciplina.reportar"],
         icon: (
           <Icon>
             <path d="M12 3 2.5 20h19L12 3z" />
@@ -353,7 +354,7 @@ interface MenuContentProps {
 }
 
 function visibleParaRol(item: MenuItem, rol: number, permisos: Set<string>): boolean {
-  if (item.permiso) return permisos.has(item.permiso);
+  if (item.permiso) return [item.permiso].flat().some((p) => permisos.has(p));
   if (item.roles) return item.roles.includes(rol);
   return true;
 }
@@ -406,14 +407,14 @@ export function Sidebar({ rol, permisos }: SidebarProps) {
   return (
     <>
       {/* Desktop */}
-      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:block">
+      <aside className="sticky top-16 hidden print:hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:block">
         <MenuContent rol={rol} permisos={permisosSet} />
       </aside>
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t("open")}
-        className="fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-intess text-white shadow-lg lg:hidden"
+        className="fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-intess text-white shadow-lg lg:hidden print:hidden"
       >
         <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" {...stroke}>
           <path d="M4 6h16M4 12h16M4 18h16" />

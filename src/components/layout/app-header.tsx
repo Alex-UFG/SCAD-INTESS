@@ -56,7 +56,7 @@ export function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-40 h-16 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-900/90">
+    <header className="sticky top-0 z-40 h-16 print:hidden border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-900/90">
       <div className="flex h-full w-full items-center justify-between gap-4 px-4 sm:px-6">
         <Link
           href={isAuthenticated ? "/dashboard" : "/auth"}

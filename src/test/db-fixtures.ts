@@ -77,6 +77,7 @@ export async function crearFixtures(): Promise<Fixtures> {
 export async function limpiarFixtures(): Promise<void> {
   const nies = [1, 2, 3, 4, 5].map((i) => NIE_BASE + i);
   const inNies = nies.map(() => "?").join(",");
+  await limpiarDisciplina(nies);
   await db.execute(`DELETE FROM nota WHERE nie IN (${inNies})`, nies);
   await db.execute(`DELETE FROM asistencia WHERE nie IN (${inNies})`, nies);
   await db.execute(`DELETE FROM matricula WHERE nie IN (${inNies})`, nies);
@@ -97,4 +98,26 @@ export async function limpiarFixtures(): Promise<void> {
   await db.execute(
     "DELETE FROM log_auditoria WHERE (tabla_afectada IN ('estudiante','matricula','estudiante_tutor') AND id_registro LIKE '99000000%') OR tabla_afectada = '__prueba__'"
   );
+}
+
+/**Incidencias de los estudiantes de prueba con sus evidencias, citaciones, avisos y bitacora */
+async function limpiarDisciplina(nies: number[]): Promise<void> {
+  const [incs] = await db.query<RowDataPacket[]>("SELECT id_incidencia FROM incidencia WHERE nie IN (?)", [nies]);
+  if (incs.length === 0) return;
+  const ids = incs.map((r) => String(r.id_incidencia));
+  const [cits] = await db.query<RowDataPacket[]>("SELECT id_citacion FROM citacion WHERE id_incidencia IN (?)", [ids]);
+  const idsCit = cits.map((r) => String(r.id_citacion));
+  await db.query("DELETE FROM notificacion WHERE referencia_tipo = 'incidencia' AND referencia_id IN (?)", [ids]);
+  await db.query("DELETE FROM log_auditoria WHERE tabla_afectada = 'incidencia' AND id_registro IN (?)", [ids]);
+  await db.query(
+    "DELETE FROM log_auditoria WHERE tabla_afectada = 'evidencia_incidencia' AND (JSON_EXTRACT(datos_nuevos, '$.id_incidencia') IN (?) OR JSON_EXTRACT(datos_anteriores, '$.id_incidencia') IN (?))",
+    [ids.map(Number), ids.map(Number)]
+  );
+  if (idsCit.length) {
+    await db.query("DELETE FROM notificacion WHERE referencia_tipo = 'citacion' AND referencia_id IN (?)", [idsCit]);
+    await db.query("DELETE FROM log_auditoria WHERE tabla_afectada = 'citacion' AND id_registro IN (?)", [idsCit]);
+  }
+  await db.query("DELETE FROM citacion WHERE id_incidencia IN (?)", [ids]);
+  await db.query("DELETE FROM evidencia_incidencia WHERE id_incidencia IN (?)", [ids]);
+  await db.query("DELETE FROM incidencia WHERE id_incidencia IN (?)", [ids]);
 }

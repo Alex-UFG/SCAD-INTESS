@@ -19,3 +19,6 @@ export const TONO_CICLO: Record<string, Tono> = { Planificado: 'gris', Activo: '
 export const TONO_PERIODO: Record<string, Tono> = { Pendiente: 'gris', Abierto: 'verde', Cerrado: 'azul' };
 export const TONO_DOCENTE: Record<string, Tono> = { Activo: 'verde', Inactivo: 'gris', Licencia: 'amarillo' };
 export const TONO_MATRICULA: Record<string, Tono> = { Vigente: 'verde', Retirado: 'rojo', Trasladado: 'amarillo' };
+export const TONO_FALTA: Record<string, Tono> = { Leve: 'amarillo', Grave: 'rojo', 'Muy Grave': 'rojo' };
+export const TONO_INCIDENCIA: Record<string, Tono> = { Abierta: 'amarillo', En_Proceso: 'azul', Resuelta: 'verde', Apelada: 'rojo' };
+export const TONO_CITACION: Record<string, Tono> = { Emitida: 'gris', Entregada: 'azul', Atendida: 'verde', No_Asistio: 'rojo' };
