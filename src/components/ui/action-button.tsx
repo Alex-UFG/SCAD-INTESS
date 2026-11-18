@@ -1,7 +1,7 @@
 'use client';
 
 import { startTransition, useActionState, useEffect, useRef, useState } from 'react';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { useToast } from '@/components/ui/toast';
 import type { ActionState } from '@/types/actions';
 
@@ -19,7 +19,7 @@ interface ActionButtonProps {
 }
 
 const base = 'rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50';
-const normal = 'border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20';
+const normal = 'border-intess text-intess hover:bg-intess-light dark:border-intess-accent dark:text-intess-accent dark:hover:bg-intess-accent/10';
 const peligro = 'border-red-600 text-red-600 hover:bg-red-50 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-900/20';
 
 /**
@@ -57,15 +57,14 @@ export function ActionButton({ action, fields, label, confirm, danger, disabled,
         {label}
       </button>
       {confirm && (
-        <ConfirmDialog
+        <ConfirmModal
           open={abierto}
           title={confirm.title}
-          text={confirm.text}
+          message={confirm.text}
           confirmLabel={label}
           onConfirm={ejecutar}
           onClose={() => setAbierto(false)}
           danger={danger}
-          pending={pending}
         />
       )}
     </>

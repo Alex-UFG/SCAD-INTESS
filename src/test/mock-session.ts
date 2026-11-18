@@ -22,6 +22,10 @@ export function sesionDe(rol: number, id = 1): Sesion {
 export function mockSession(estado: { sesion: Sesion | null }) {
   return {
     requireSession: async () => estado.sesion,
+    exigirSesion: async () => {
+      if (!estado.sesion) throw new Error("UNAUTHORIZED");
+      return estado.sesion;
+    },
     requireAdmin: async () => (estado.sesion?.user.rol === 1 ? estado.sesion : null),
   };
 }

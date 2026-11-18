@@ -31,6 +31,7 @@ export function FotoEstudiante({ nie, fotoUrl, nombre, puedeEditar }: Props) {
         setPreview(null);
         router.refresh();
       } else {
+        setPreview(null);
         toast.error(t(`errors.${r.error}`));
       }
     });
@@ -48,12 +49,12 @@ export function FotoEstudiante({ nie, fotoUrl, nombre, puedeEditar }: Props) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="h-32 w-32 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
+      <div className="h-32 w-32 overflow-hidden rounded-full border-2 border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
         {src ? (
           // Blob URLs no estan en next.config images: se usa <img> via unoptimized
           <Image src={src} alt={nombre} width={128} height={128} unoptimized className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-gray-400">
+          <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-slate-400">
             {nombre.slice(0, 1).toUpperCase()}
           </div>
         )}
@@ -61,7 +62,7 @@ export function FotoEstudiante({ nie, fotoUrl, nombre, puedeEditar }: Props) {
       {puedeEditar && (
         <div className="flex gap-3 text-xs">
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
-          <button type="button" disabled={pending} onClick={() => input.current?.click()} className="font-medium text-blue-600 hover:underline disabled:opacity-50 dark:text-blue-400">
+          <button type="button" disabled={pending} onClick={() => input.current?.click()} className="font-medium text-intess hover:underline disabled:opacity-50 dark:text-intess-accent">
             {pending ? t('fotoSubiendo') : fotoUrl ? t('fotoCambiar') : t('fotoSubir')}
           </button>
           {fotoUrl && (

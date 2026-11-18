@@ -17,9 +17,9 @@ export default async function TutoresPage() {
       nombreCompleto(tutor),
       <span key="c">
         <div>{tutor.telefono_principal}</div>
-        {tutor.email && <div className="text-xs text-gray-500">{tutor.email}</div>}
+        {tutor.email && <div className="text-xs text-slate-500">{tutor.email}</div>}
       </span>,
-      <Link key="v" href={`/dashboard/tutores/${tutor.dui_tutor}`} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline">
+      <Link key="v" href={`/dashboard/tutores/${tutor.dui_tutor}`} className="text-intess hover:text-intess-dark dark:text-intess-accent dark:hover:text-intess-accent font-medium hover:underline">
         {t('verFicha')}
       </Link>,
     ],
@@ -30,9 +30,9 @@ export default async function TutoresPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-intess-dark dark:text-slate-100">{t('title')}</h1>
         {puedeCrear && (
-          <Link href="/dashboard/tutores/nuevo" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+          <Link href="/dashboard/tutores/nuevo" className="bg-intess hover:bg-intess/85 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
             {t('new')}
           </Link>
         )}

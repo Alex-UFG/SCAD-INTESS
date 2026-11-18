@@ -17,7 +17,7 @@ export default async function MateriasPage() {
     requirePermiso('config.catalogos'),
   ]);
   const puedeEditar = Boolean(editor);
-  const linkClass = 'text-blue-600 hover:underline dark:text-blue-400 text-sm font-medium bg-transparent p-0';
+  const linkClass = 'text-intess hover:underline dark:text-intess-accent text-sm font-medium bg-transparent p-0';
 
   const rows: RowsTableRow[] = materias.map((m) => ({
     key: m.cod_materia,
@@ -50,8 +50,8 @@ export default async function MateriasPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('title')}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold text-intess-dark dark:text-slate-100">{t('title')}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
         </div>
         {puedeEditar && <FormMateria especialidades={especialidades} trigger={t('nueva')} />}
       </div>

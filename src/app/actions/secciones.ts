@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
-import { requireSession } from '@/lib/session';
+import { exigirSesion } from '@/lib/session';
 import { requirePermiso } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { DUI_REGEX } from '@/lib/validations/shared';
@@ -31,12 +31,6 @@ export interface SeccionDetalle {
   ciclo_estado: string;
   /**Matriculas Vigentes */
   vigentes: number;
-}
-
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
 }
 
 const SELECT_SECCION = `
@@ -98,7 +92,7 @@ function leer(formData: FormData) {
     id_especialidad: formData.get('id_especialidad'),
     id_ciclo: formData.get('id_ciclo'),
     dui_docente_guia: formData.get('dui_docente_guia') || null,
-    capacidad_max: formData.get('capacidad_max') || 40,
+    capacidad_max: formData.get('capacidad_max') || undefined,
   };
 }
 

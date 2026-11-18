@@ -6,16 +6,17 @@ import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
 import { Badge, TONO_CICLO } from '@/components/ui/badge';
 import { FormSeccion } from './form-seccion';
 
-export const metadata = {
-  title: 'Secciones | SCAD-INTESS',
-  description: 'Gestión de secciones por ciclo escolar'
-};
+export async function generateMetadata() {
+  const t = await getTranslations('secciones');
+  return { title: `${t('title')} | SCAD-INTESS` };
+}
 
 export const dynamic = 'force-dynamic';
 
 export default async function SeccionesPage() {
-  const [t, secciones, especialidades, ciclos, docentes, editor] = await Promise.all([
+  const [t, tCiclos, secciones, especialidades, ciclos, docentes, editor] = await Promise.all([
     getTranslations('secciones'),
+    getTranslations('ciclos'),
     getSecciones(),
     getEspecialidadesActivas(),
     getCiclosAbiertos(),
@@ -27,7 +28,7 @@ export default async function SeccionesPage() {
   const rows: RowsTableRow[] = secciones.map((s) => ({
     key: String(s.id_seccion),
     cells: [
-      <span key="c">{s.ciclo_anio} <Badge tono={TONO_CICLO[s.ciclo_estado]}>{s.ciclo_estado}</Badge></span>,
+      <span key="c">{s.ciclo_anio} <Badge tono={TONO_CICLO[s.ciclo_estado]}>{tCiclos(`estados.${s.ciclo_estado}`)}</Badge></span>,
       `${s.grado}°`,
       <span key="n" className="font-medium">{s.nombre}</span>,
       s.especialidad_nombre,
@@ -41,7 +42,7 @@ export default async function SeccionesPage() {
           docentes={docentes}
           seccion={s}
           trigger={t('editar')}
-          triggerClassName="text-blue-600 hover:underline dark:text-blue-400 text-sm font-medium bg-transparent p-0"
+          triggerClassName="text-intess hover:underline dark:text-intess-accent text-sm font-medium bg-transparent p-0"
         />
       ) : null,
     ],
@@ -52,7 +53,7 @@ export default async function SeccionesPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-intess-dark dark:text-slate-100">{t('title')}</h1>
         {puedeEditar && <FormSeccion especialidades={especialidades} ciclos={ciclos} docentes={docentes} trigger={t('nueva')} />}
       </div>
 

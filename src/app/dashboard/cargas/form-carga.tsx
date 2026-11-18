@@ -36,7 +36,7 @@ export function FormCarga({ idCiclo, anio, docentes, materias, secciones }: Prop
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+      <button type="button" onClick={() => setOpen(true)} className="bg-intess hover:bg-intess/85 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
         {t('asignar')}
       </button>
 
@@ -70,10 +70,10 @@ export function FormCarga({ idCiclo, anio, docentes, materias, secciones }: Prop
                 <option key={m.cod_materia} value={m.cod_materia}>{m.cod_materia} — {m.nombre}</option>
               ))}
             </select>
-            {idSeccion && materiasFiltradas.length === 0 && <span className="text-xs text-gray-500">{t('sinMateriasCompatibles')}</span>}
+            {idSeccion && materiasFiltradas.length === 0 && <span className="text-xs text-slate-500">{t('sinMateriasCompatibles')}</span>}
           </FormField>
 
-          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
             <button type="submit" disabled={pending} className={submitButtonClass}>
               {pending ? t('guardando') : t('asignar')}
             </button>

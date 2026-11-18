@@ -5,7 +5,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import type { PoolConnection } from 'mysql2/promise';
 import { CicloEscolar, EstadoMatricula, MatriculaDetalle, SeccionConEspecialidad } from '@/types/academico';
 import { MatriculaFormData, matriculaSchema } from '@/lib/validations/matricula';
-import { requireSession } from '@/lib/session';
+import { exigirSesion } from '@/lib/session';
 import { requirePermiso } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
@@ -31,12 +31,6 @@ export interface MatriculaListado {
   ciclo_anio: number;
   fecha_matricula: Date;
   estado: EstadoMatricula;
-}
-
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
 }
 
 export async function getMatriculasPorEstudiante(nie: number): Promise<MatriculaDetalle[]> {
@@ -299,8 +293,10 @@ export async function retirarMatricula(input: unknown): Promise<ResultadoMatricu
       datos: { estado: motivo, observaciones },
     });
 
+    // Solo cuentan matriculas de ciclos abiertos: las de ciclos cerrados siguen Vigente
     const [otras] = await connection.query<RowDataPacket[]>(
-      "SELECT 1 FROM matricula WHERE nie = ? AND estado = 'Vigente' LIMIT 1",
+      `SELECT 1 FROM matricula m INNER JOIN ciclo_escolar c ON c.id_ciclo = m.id_ciclo
+        WHERE m.nie = ? AND m.estado = 'Vigente' AND c.estado <> 'Cerrado' LIMIT 1`,
       [anterior.nie]
     );
     if (otras.length === 0) {

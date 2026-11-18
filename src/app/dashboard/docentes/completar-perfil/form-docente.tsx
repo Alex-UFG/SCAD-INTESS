@@ -17,11 +17,11 @@ export function FormCompletarPerfilDocente({ especialidades, docente }: Props) {
   const [state, formAction, isPending] = useActionState(docente ? editarPerfilDocente : completarPerfilDocente, {} as ActionState);
 
   return (
-    <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+    <div className="bg-white dark:bg-slate-900 shadow rounded-lg border border-slate-200 dark:border-slate-800 p-6">
       <ActionMessageBanner state={state} />
 
       {especialidades.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('sinEspecialidades')}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t('sinEspecialidades')}</p>
       ) : (
         <form action={formAction} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -74,7 +74,7 @@ export function FormCompletarPerfilDocente({ especialidades, docente }: Props) {
             </FormField>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
             <button type="submit" disabled={isPending} className={submitButtonClass}>
               {isPending ? t('guardando') : docente ? t('guardarCambios') : t('guardar')}
             </button>

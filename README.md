@@ -46,11 +46,7 @@ Esto crea la base `scad_intess` con 24 tablas y los datos estructurales: 5 roles
 
 **3. Variables de entorno**
 
-Copiar la plantilla y completar:
-
-```bash
-cp .env.example .env.local
-```
+Crear un archivo `.env.local` en la raíz con:
 
 ```env
 DB_HOST=localhost
@@ -61,6 +57,7 @@ DB_NAME=scad_intess
 DB_SSL=false             # true para TiDB Cloud
 AUTH_SECRET=        # generar con: npx auth secret
 AUTH_URL=http://localhost:3000
+BLOB_READ_WRITE_TOKEN=   # Vercel Blob; necesario para subir fotos de estudiantes
 ```
 
 `.env.local` no se versiona. Nunca commitear credenciales.
@@ -75,11 +72,7 @@ Abrir [http://localhost:3000](http://localhost:3000).
 
 **5. Verificar la conexión a la base de datos**
 
-Abrir [http://localhost:3000/api/health](http://localhost:3000/api/health). Respuesta esperada:
-
-```json
-{ "status": "ok", "db": { "roles": 5, "permisos": 25, "especialidades": 4 } }
-```
+Iniciar sesión con las credenciales iniciales de la sección siguiente. Si el panel carga con sus indicadores, la conexión funciona.
 
 ## Credenciales iniciales
 
@@ -114,7 +107,6 @@ Reglas:
 │   ├── components/    # Componentes UI compartidos
 │   ├── lib/           # db.ts (pool mysql2), auth, validaciones Zod
 │   └── types/         # Interfaces TypeScript por tabla
-├── uploads/           # Evidencias disciplinarias (NO versionado)
 └── PROYECTO.md        # Documentación de arquitectura y decisiones
 ```
 

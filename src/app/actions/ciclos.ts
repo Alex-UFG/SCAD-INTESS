@@ -6,7 +6,8 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import type { PoolConnection } from 'mysql2/promise';
 import { z } from 'zod';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
-import { requireSession } from '@/lib/session';
+import { exigirSesion } from '@/lib/session';
+import { fechaIso } from '@/lib/format';
 import { requirePermiso } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { createCicloSchema, createPeriodoSchema, ESTADOS_CICLO, ESTADOS_PERIODO } from '@/lib/validations/ciclo';
@@ -33,23 +34,12 @@ export interface Periodo {
 
 const PERIODOS_POR_CICLO = 3;
 
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
-}
-
-/**DATE de MySQL llega como Date (timezone Z): se expone como YYYY-MM-DD */
-function iso(d: Date | string): string {
-  return typeof d === 'string' ? d.slice(0, 10) : d.toISOString().slice(0, 10);
-}
-
 function mapCiclo(r: RowDataPacket): Ciclo {
-  return { ...(r as Ciclo), fecha_inicio: iso(r.fecha_inicio), fecha_fin: iso(r.fecha_fin), secciones: Number(r.secciones ?? 0) };
+  return { ...(r as Ciclo), fecha_inicio: fechaIso(r.fecha_inicio), fecha_fin: fechaIso(r.fecha_fin), secciones: Number(r.secciones ?? 0) };
 }
 
 function mapPeriodo(r: RowDataPacket): Periodo {
-  return { ...(r as Periodo), fecha_inicio: iso(r.fecha_inicio), fecha_cierre: iso(r.fecha_cierre) };
+  return { ...(r as Periodo), fecha_inicio: fechaIso(r.fecha_inicio), fecha_cierre: fechaIso(r.fecha_cierre) };
 }
 
 export async function getCiclos(): Promise<Ciclo[]> {
@@ -233,8 +223,10 @@ export async function cambiarEstadoCiclo(_prev: ActionState, formData: FormData)
 
   const connection = await getTransaction();
   try {
-    // serializa activaciones concurrentes
-    const [activos] = await connection.query<RowDataPacket[]>("SELECT id_ciclo FROM ciclo_escolar WHERE estado = 'Activo' FOR UPDATE");
+    // Serializa activaciones concurrentes. Se bloquea toda la tabla (pocas filas):
+    // filtrar por estado = 'Activo' no bloquea nada cuando aun no hay ciclo activo.
+    const [todos] = await connection.query<RowDataPacket[]>('SELECT id_ciclo, estado FROM ciclo_escolar FOR UPDATE');
+    const activos = todos.filter((c) => c.estado === 'Activo');
     const [rows] = await connection.query<RowDataPacket[]>('SELECT * FROM ciclo_escolar WHERE id_ciclo = ? FOR UPDATE', [id_ciclo]);
     const ciclo = rows[0];
     if (!ciclo) { await connection.rollback(); return { success: false, message: t('errors.noExiste') }; }
@@ -304,7 +296,7 @@ export async function guardarPeriodo(_prev: ActionState, formData: FormData): Pr
     const p = await periodoBloqueado(connection, id_periodo);
     if (!p) { await connection.rollback(); return { success: false, message: t('errors.noExiste') }; }
     if (p.ciclo_estado === 'Cerrado' || p.estado === 'Cerrado') { await connection.rollback(); return { success: false, message: t('errors.periodoCerrado') }; }
-    if (fecha_inicio < iso(p.ciclo_inicio) || fecha_cierre > iso(p.ciclo_fin)) {
+    if (fecha_inicio < fechaIso(p.ciclo_inicio) || fecha_cierre > fechaIso(p.ciclo_fin)) {
       await connection.rollback();
       return { success: false, message: t('errors.fueraDelCiclo') };
     }
@@ -321,7 +313,7 @@ export async function guardarPeriodo(_prev: ActionState, formData: FormData): Pr
       tabla: 'periodo_evaluativo',
       idRegistro: id_periodo,
       accion: 'UPDATE',
-      datosAnteriores: { fecha_inicio: iso(p.fecha_inicio), fecha_cierre: iso(p.fecha_cierre) },
+      datosAnteriores: { fecha_inicio: fechaIso(p.fecha_inicio), fecha_cierre: fechaIso(p.fecha_cierre) },
       datos: { fecha_inicio, fecha_cierre },
     });
     await connection.commit();

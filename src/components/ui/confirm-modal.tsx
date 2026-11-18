@@ -11,8 +11,13 @@ interface ConfirmModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   danger?: boolean;
-  onConfirm: () => void | Promise<void>;
+  /**Deshabilita confirmar (ej. falta un campo obligatorio) */
+  confirmDisabled?: boolean;
+  /**Devolver false deja el modal abierto (ej. la accion fallo) */
+  onConfirm: () => void | boolean | Promise<void | boolean>;
   onClose: () => void;
+  /**Campos adicionales (ej. observacion obligatoria) */
+  children?: ReactNode;
 }
 
 export function ConfirmModal({
@@ -22,8 +27,10 @@ export function ConfirmModal({
   confirmLabel,
   cancelLabel,
   danger = false,
+  confirmDisabled = false,
   onConfirm,
   onClose,
+  children,
 }: ConfirmModalProps) {
   const t = useTranslations('common');
   const [pending, setPending] = useState(false);
@@ -31,8 +38,8 @@ export function ConfirmModal({
   async function confirmar() {
     setPending(true);
     try {
-      await onConfirm();
-      onClose();
+      const ok = await onConfirm();
+      if (ok !== false) onClose();
     } finally {
       setPending(false);
     }
@@ -41,6 +48,7 @@ export function ConfirmModal({
   return (
     <Modal title={title} open={open} onClose={pending ? () => {} : onClose}>
       <div className="text-sm text-slate-600 dark:text-slate-300">{message}</div>
+      {children && <div className="mt-4 space-y-4">{children}</div>}
       <div className="mt-6 flex justify-end gap-2">
         <button
           type="button"
@@ -53,7 +61,7 @@ export function ConfirmModal({
         <button
           type="button"
           onClick={confirmar}
-          disabled={pending}
+          disabled={pending || confirmDisabled}
           className={`rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
             danger ? 'bg-reprobado hover:bg-reprobado/85' : 'bg-intess hover:bg-intess/85'
           }`}

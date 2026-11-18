@@ -4,8 +4,11 @@ const globalForDb = globalThis as unknown as { dbPool?: mysql.Pool };
 
 // Sin valores por defecto para usuario/contrasena: un despliegue mal
 // configurado debe fallar en el arranque, no conectarse como root sin clave.
+// `next build` importa este modulo sin consultar la BD: ahi no se exige, para
+// que CI y los builds sin credenciales sigan compilando.
+const esBuild = process.env.NEXT_PHASE === "phase-production-build";
 for (const v of ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"] as const) {
-  if (process.env[v] === undefined) {
+  if (!esBuild && process.env[v] === undefined) {
     throw new Error(`Variable de entorno ${v} no definida (ver README, seccion Variables de entorno)`);
   }
 }

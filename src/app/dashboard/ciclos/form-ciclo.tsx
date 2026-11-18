@@ -19,16 +19,16 @@ export function FormCiclo({ ciclo }: { ciclo?: Ciclo }) {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          className="bg-intess hover:bg-intess/85 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
         >
           {open ? t('cerrarForm') : t('nuevo')}
         </button>
       )}
 
       {open && (
-        <div className={ciclo ? '' : 'w-full bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6'}>
+        <div className={ciclo ? '' : 'w-full bg-white dark:bg-slate-900 shadow rounded-lg border border-slate-200 dark:border-slate-800 p-6'}>
           {!ciclo && (
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b pb-2 mb-4 dark:border-gray-800">{t('formTitle')}</h2>
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 border-b pb-2 mb-4 dark:border-slate-800">{t('formTitle')}</h2>
           )}
           <ActionMessageBanner state={state} />
           <form action={formAction} className="space-y-6">
@@ -44,8 +44,8 @@ export function FormCiclo({ ciclo }: { ciclo?: Ciclo }) {
                 <input type="date" name="fecha_fin" required defaultValue={ciclo?.fecha_fin ?? `${anioSugerido}-11-06`} className={inputClass} />
               </FormField>
             </div>
-            {!ciclo && <p className="text-xs text-gray-500 dark:text-gray-400">{t('trimestresAuto')}</p>}
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+            {!ciclo && <p className="text-xs text-slate-500 dark:text-slate-400">{t('trimestresAuto')}</p>}
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
               <button type="submit" disabled={pending} className={submitButtonClass}>
                 {pending ? t('guardando') : ciclo ? t('guardarCambios') : t('crear')}
               </button>

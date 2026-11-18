@@ -2,10 +2,10 @@ import { ReactNode } from 'react';
 import type { ActionState } from '@/types/actions';
 
 export const inputClass =
-  'w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500';
+  'w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-intess';
 
 export const submitButtonClass =
-  'bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md font-medium transition-colors';
+  'bg-intess hover:bg-intess/85 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md font-medium transition-colors';
 
 interface FormFieldProps {
   label: string;
@@ -18,7 +18,7 @@ interface FormFieldProps {
 export function FormField({ label, required, error, children }: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}{required ? ' *' : ''}</label>
+      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}{required ? ' *' : ''}</label>
       {children}
       {error && <p className="text-red-500 text-xs">{error}</p>}
     </div>
