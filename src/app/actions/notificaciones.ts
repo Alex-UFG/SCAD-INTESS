@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { RowDataPacket } from 'mysql2';
 import { db } from '@/lib/db';
-import { requireSession } from '@/lib/session';
+import { requireSession, exigirSesion } from '@/lib/session';
 import type { TipoNotificacion } from '@/lib/notificaciones';
 import type { ActionState } from '@/types/actions';
 
@@ -19,15 +19,9 @@ export interface NotificacionRow {
   periodo: number | null;
 }
 
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return Number(session.user.id);
-}
-
 /**Las 50 notificaciones mas recientes del usuario de la sesion */
 export async function getNotificaciones(): Promise<NotificacionRow[]> {
-  const idUsuario = await exigirSesion();
+  const idUsuario = Number((await exigirSesion()).user.id);
   const [rows] = await db.query<RowDataPacket[]>(
     `SELECT n.id_notificacion, n.tipo, n.titulo, n.mensaje, n.leida,
             DATE_FORMAT(n.creada_en, '%Y-%m-%d %H:%i') AS creada_en, p.numero AS periodo

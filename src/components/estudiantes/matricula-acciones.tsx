@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { retirarMatricula, trasladarMatricula } from '@/app/actions/matriculas';
 import type { SeccionConEspecialidad } from '@/types/academico';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { useToast } from '@/components/ui/toast';
 import { inputClass } from '@/components/ui/form-field';
 
@@ -27,7 +27,6 @@ export function MatriculaAcciones({ idMatricula, idSeccion, idCiclo, secciones, 
   const [motivo, setMotivo] = useState<'Retirado' | 'Trasladado'>('Retirado');
   const [observaciones, setObservaciones] = useState('');
   const [destino, setDestino] = useState('');
-  const [pending, start] = useTransition();
 
   const destinos = secciones.filter((s) => s.id_ciclo === idCiclo && s.id_seccion !== idSeccion);
 
@@ -37,20 +36,17 @@ export function MatriculaAcciones({ idMatricula, idSeccion, idCiclo, secciones, 
     setDestino('');
   };
 
-  const ejecutar = () => {
-    start(async () => {
-      const r =
-        modal === 'retiro'
-          ? await retirarMatricula({ id_matricula: idMatricula, motivo, observaciones })
-          : await trasladarMatricula({ id_matricula: idMatricula, id_seccion_destino: Number(destino), observaciones });
-      if (r.success) {
-        toast.success(t(modal === 'retiro' ? 'retirada' : 'trasladada'));
-        cerrar();
-        router.refresh();
-      } else {
-        toast.error(t(`errors.${r.error}`));
-      }
-    });
+  const ejecutar = async () => {
+    const r =
+      modal === 'retiro'
+        ? await retirarMatricula({ id_matricula: idMatricula, motivo, observaciones })
+        : await trasladarMatricula({ id_matricula: idMatricula, id_seccion_destino: Number(destino), observaciones });
+    if (!r.success) {
+      toast.error(t(`errors.${r.error}`));
+      return false;
+    }
+    toast.success(t(modal === 'retiro' ? 'retirada' : 'trasladada'));
+    router.refresh();
   };
 
   if (!puedeRetirar && !puedeTrasladar) return null;
@@ -59,7 +55,7 @@ export function MatriculaAcciones({ idMatricula, idSeccion, idCiclo, secciones, 
     <>
       <span className="flex gap-3">
         {puedeTrasladar && (
-          <button type="button" onClick={() => setModal('traslado')} className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400">
+          <button type="button" onClick={() => setModal('traslado')} className="text-xs font-medium text-intess hover:underline dark:text-intess-accent">
             {t('trasladar')}
           </button>
         )}
@@ -70,39 +66,38 @@ export function MatriculaAcciones({ idMatricula, idSeccion, idCiclo, secciones, 
         )}
       </span>
 
-      <ConfirmDialog
+      <ConfirmModal
         open={modal === 'retiro'}
         title={t('retirarTitle')}
-        text={t('retirarTexto')}
+        message={t('retirarTexto')}
         confirmLabel={t('retirar')}
         onConfirm={ejecutar}
         onClose={cerrar}
-        pending={pending}
         danger
       >
-        <label className="block text-sm text-gray-700 dark:text-gray-300">
+        <label className="block text-sm text-slate-700 dark:text-slate-300">
           {t('motivo')}
           <select value={motivo} onChange={(e) => setMotivo(e.target.value as 'Retirado' | 'Trasladado')} className={`${inputClass} mt-1`}>
             <option value="Retirado">{t('motivos.Retirado')}</option>
             <option value="Trasladado">{t('motivos.Trasladado')}</option>
           </select>
         </label>
-        <label className="block text-sm text-gray-700 dark:text-gray-300">
+        <label className="block text-sm text-slate-700 dark:text-slate-300">
           {t('observaciones')} *
           <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={3} minLength={5} maxLength={500} required className={`${inputClass} mt-1`} />
         </label>
-      </ConfirmDialog>
+      </ConfirmModal>
 
-      <ConfirmDialog
+      <ConfirmModal
         open={modal === 'traslado'}
         title={t('trasladarTitle')}
-        text={t('trasladarTexto')}
+        message={t('trasladarTexto')}
         confirmLabel={t('trasladar')}
         onConfirm={ejecutar}
         onClose={cerrar}
-        pending={pending || !destino}
+        confirmDisabled={!destino}
       >
-        <label className="block text-sm text-gray-700 dark:text-gray-300">
+        <label className="block text-sm text-slate-700 dark:text-slate-300">
           {t('seccionDestino')} *
           <select value={destino} onChange={(e) => setDestino(e.target.value)} className={`${inputClass} mt-1`}>
             <option value="" disabled>{t('seleccioneSeccion')}</option>
@@ -111,11 +106,11 @@ export function MatriculaAcciones({ idMatricula, idSeccion, idCiclo, secciones, 
             ))}
           </select>
         </label>
-        <label className="block text-sm text-gray-700 dark:text-gray-300">
+        <label className="block text-sm text-slate-700 dark:text-slate-300">
           {t('observaciones')}
           <textarea value={observaciones} onChange={(e) => setObservaciones(e.target.value)} rows={2} maxLength={500} className={`${inputClass} mt-1`} />
         </label>
-      </ConfirmDialog>
+      </ConfirmModal>
     </>
   );
 }

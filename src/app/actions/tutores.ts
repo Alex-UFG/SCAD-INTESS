@@ -4,8 +4,9 @@ import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Tutor, Parentesco } from '@/types/persona';
 import { TutorFormData, EstudianteTutorFormData, tutorSchema, estudianteTutorSchema } from '@/lib/validations/tutor';
-import { requireSession } from '@/lib/session';
+import { exigirSesion } from '@/lib/session';
 import { requirePermiso } from '@/lib/permisos';
+import { DUI_REGEX } from '@/lib/validations/shared';
 import { registrarAuditoria } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -24,12 +25,6 @@ export interface EstudianteDelTutor {
   estado: string;
   parentesco: Parentesco;
   contacto_principal: boolean;
-}
-
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
 }
 
 export async function getTutores(): Promise<Tutor[]> {
@@ -241,7 +236,7 @@ export async function vincularEstudianteTutor(data: EstudianteTutorFormData): Pr
 
 const desvincularSchema = z.object({
   nie: z.coerce.number().int().positive(),
-  dui_tutor: z.string().regex(/^\d{8}-\d$/),
+  dui_tutor: z.string().regex(DUI_REGEX),
 });
 
 /**

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { cambiarEstadoEstudiante } from '@/app/actions/estudiantes';
 import type { EstadoEstudiante } from '@/types/persona';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { useToast } from '@/components/ui/toast';
 import { inputClass } from '@/components/ui/form-field';
 
@@ -21,23 +21,23 @@ export function EstadoEstudianteAcciones({ nie, estado }: { nie: number; estado:
   const toast = useToast();
   const [destino, setDestino] = useState<Destino | null>(null);
   const [observacion, setObservacion] = useState('');
-  const [pending, start] = useTransition();
 
   const opciones: Destino[] = (['Activo', 'Inactivo', 'Egresado'] as Destino[]).filter((d) => d !== estado);
 
-  const confirmar = () => {
-    if (!destino) return;
-    start(async () => {
-      const r = await cambiarEstadoEstudiante({ nie, estado: destino, observacion });
-      if (r.success) {
-        toast.success(t('estadoActualizado'));
-        setDestino(null);
-        setObservacion('');
-        router.refresh();
-      } else {
-        toast.error(t(`errors.${r.error}`));
-      }
-    });
+  const cerrar = () => {
+    setDestino(null);
+    setObservacion('');
+  };
+
+  const confirmar = async () => {
+    if (!destino) return false;
+    const r = await cambiarEstadoEstudiante({ nie, estado: destino, observacion });
+    if (!r.success) {
+      toast.error(t(`errors.${r.error}`));
+      return false;
+    }
+    toast.success(t('estadoActualizado'));
+    router.refresh();
   };
 
   return (
@@ -58,22 +58,21 @@ export function EstadoEstudianteAcciones({ nie, estado }: { nie: number; estado:
           </button>
         ))}
       </div>
-      <ConfirmDialog
+      <ConfirmModal
         open={destino !== null}
         title={destino ? t(`marcar.${destino}`) : ''}
-        text={destino ? t('confirmarEstado', { estado: t(`estados.${destino}`) }) : ''}
+        message={destino ? t('confirmarEstado', { estado: t(`estados.${destino}`) }) : ''}
         confirmLabel={t('confirmar')}
         onConfirm={confirmar}
-        onClose={() => setDestino(null)}
-        pending={pending}
+        onClose={cerrar}
         danger={destino === 'Egresado'}
       >
-        <label className="block text-sm text-gray-700 dark:text-gray-300">
+        <label className="block text-sm text-slate-700 dark:text-slate-300">
           {t('observacionEstado')}
           <textarea value={observacion} onChange={(e) => setObservacion(e.target.value)} rows={2} maxLength={500} className={`${inputClass} mt-1`} />
-          {destino === 'Egresado' && <span className="text-xs text-gray-500">{t('egresoAyuda')}</span>}
+          {destino === 'Egresado' && <span className="text-xs text-slate-500">{t('egresoAyuda')}</span>}
         </label>
-      </ConfirmDialog>
+      </ConfirmModal>
     </>
   );
 }

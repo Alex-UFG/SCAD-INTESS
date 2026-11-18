@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
-import { requireSession } from '@/lib/session';
+import { exigirSesion } from '@/lib/session';
 import { requirePermiso } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { createCargaSchema } from '@/lib/validations/carga';
@@ -28,12 +28,6 @@ export interface CargaRow {
   anio: number;
   /**Matriculas Vigentes en la seccion (alumnos a cargo) */
   estudiantes: number;
-}
-
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
 }
 
 const SELECT_CARGA = `

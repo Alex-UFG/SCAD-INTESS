@@ -63,7 +63,7 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+        className="text-sm text-intess hover:text-intess-dark font-medium"
       >
         {t('matricularBoton')}
       </button>
@@ -72,7 +72,7 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
         <ServerErrorBanner message={serverError} />
 
         {ciclos.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {t('sinCiclos')}
           </p>
         ) : (
@@ -111,7 +111,7 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
               <textarea {...register('observaciones')} rows={3} className={inputClass} />
             </FormField>
 
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
               <button type="submit" disabled={isSubmitting} className={submitButtonClass}>
                 {isSubmitting ? tCommon('saving') : t('matricular')}
               </button>

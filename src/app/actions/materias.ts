@@ -5,7 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { RowDataPacket } from 'mysql2';
 import { z } from 'zod';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
-import { requireSession } from '@/lib/session';
+import { exigirSesion } from '@/lib/session';
 import { requirePermiso } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { createMateriaSchema } from '@/lib/validations/materia';
@@ -23,15 +23,14 @@ export interface Materia {
   cargas: number;
 }
 
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
-}
-
 function mapMateria(r: RowDataPacket): Materia {
   return { ...(r as Materia), activa: Boolean(r.activa), cargas: Number(r.cargas ?? 0) };
 }
+
+const SELECT_MATERIA = `
+  SELECT m.*, e.nombre AS especialidad_nombre,
+         (SELECT COUNT(*) FROM carga_academica c WHERE c.cod_materia = m.cod_materia) AS cargas
+    FROM materia m INNER JOIN especialidad e ON e.id_especialidad = m.id_especialidad`;
 
 export async function getMaterias(opts: { soloActivas?: boolean; idEspecialidad?: number; grado?: number } = {}): Promise<Materia[]> {
   await exigirSesion();
@@ -42,11 +41,7 @@ export async function getMaterias(opts: { soloActivas?: boolean; idEspecialidad?
   if (opts.grado) { cond.push('m.grado = ?'); params.push(opts.grado); }
   const where = cond.length ? `WHERE ${cond.join(' AND ')}` : '';
   const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT m.*, e.nombre AS especialidad_nombre,
-            (SELECT COUNT(*) FROM carga_academica c WHERE c.cod_materia = m.cod_materia) AS cargas
-       FROM materia m INNER JOIN especialidad e ON e.id_especialidad = m.id_especialidad
-       ${where}
-      ORDER BY m.grado, e.nombre, m.cod_materia`,
+    `${SELECT_MATERIA} ${where} ORDER BY m.grado, e.nombre, m.cod_materia`,
     params
   );
   return rows.map(mapMateria);
@@ -55,10 +50,7 @@ export async function getMaterias(opts: { soloActivas?: boolean; idEspecialidad?
 export async function getMateriaPorCodigo(cod: string): Promise<Materia | null> {
   await exigirSesion();
   const [rows] = await db.query<RowDataPacket[]>(
-    `SELECT m.*, e.nombre AS especialidad_nombre,
-            (SELECT COUNT(*) FROM carga_academica c WHERE c.cod_materia = m.cod_materia) AS cargas
-       FROM materia m INNER JOIN especialidad e ON e.id_especialidad = m.id_especialidad
-      WHERE m.cod_materia = ?`,
+    `${SELECT_MATERIA} WHERE m.cod_materia = ?`,
     [cod]
   );
   return rows[0] ? mapMateria(rows[0]) : null;

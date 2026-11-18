@@ -5,9 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { RowDataPacket } from 'mysql2';
 import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
-import { requireSession } from '@/lib/session';
-import { getPermisosDeRol, ROL_DOCENTE } from '@/lib/permisos';
+import { requireSession, exigirSesion } from '@/lib/session';
+import { getPermisosDeRol, requirePermiso, ROL_DOCENTE } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
+import { fechaIso } from '@/lib/format';
 import { DUI_REGEX, TELEFONO_REGEX, FECHA_ISO_REGEX } from '@/lib/validations/shared';
 import type { ActionState } from '@/types/actions';
 import { ESTADOS_DOCENTE, type EstadoDocente } from '@/lib/constantes';
@@ -38,18 +39,8 @@ export interface DocenteRow extends Docente {
   cargas: number;
 }
 
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
-}
-
-function iso(d: Date | string): string {
-  return typeof d === 'string' ? d.slice(0, 10) : d.toISOString().slice(0, 10);
-}
-
 function mapDocente<T extends RowDataPacket>(r: T) {
-  return { ...r, fecha_ingreso: iso(r.fecha_ingreso), cargas: Number(r.cargas ?? 0) };
+  return { ...r, fecha_ingreso: fechaIso(r.fecha_ingreso), cargas: Number(r.cargas ?? 0) };
 }
 
 export async function getEspecialidadesActivas(): Promise<Especialidad[]> {
@@ -92,6 +83,7 @@ export async function getDocentePorUsuario(idUsuario: number): Promise<DocenteRo
 
 /**true si el usuario tiene fila en docente; para el guard del layout */
 export async function usuarioTieneDocente(idUsuario: number): Promise<boolean> {
+  await exigirSesion();
   const [rows] = await db.query<RowDataPacket[]>('SELECT 1 FROM docente WHERE id_usuario = ? LIMIT 1', [idUsuario]);
   return rows.length > 0;
 }
@@ -255,8 +247,8 @@ export async function editarPerfilDocente(_prev: ActionState, formData: FormData
 /**Activo / Inactivo / Licencia. Un docente no Activo no recibe cargas nuevas */
 export async function setEstadoDocente(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const t = await getTranslations('docentes');
-  const session = await requireSession();
-  if (!session || !(await getPermisosDeRol(session.user.rol)).has('usuarios.editar')) {
+  const session = await requirePermiso('usuarios.editar');
+  if (!session) {
     return { success: false, message: t('errors.sinPermiso') };
   }
   const parsed = z.object({ dui_docente: z.string().regex(DUI_REGEX), estado: z.enum(ESTADOS_DOCENTE) })

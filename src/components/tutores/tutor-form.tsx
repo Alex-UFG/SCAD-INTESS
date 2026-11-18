@@ -42,7 +42,7 @@ export function TutorForm({ dui, defaultValues }: TutorFormProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+    <div className="bg-white dark:bg-slate-900 shadow rounded-lg border border-slate-200 dark:border-slate-800 p-6">
       <ServerErrorBanner message={serverError} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -86,7 +86,7 @@ export function TutorForm({ dui, defaultValues }: TutorFormProps) {
 
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
           <button type="submit" disabled={isSubmitting} className={submitButtonClass}>
             {isSubmitting ? tCommon('saving') : esEdicion ? t('guardarCambios') : t('guardar')}
           </button>

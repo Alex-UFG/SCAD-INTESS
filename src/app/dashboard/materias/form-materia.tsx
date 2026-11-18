@@ -27,7 +27,7 @@ export function FormMateria({ especialidades, materia, trigger, triggerClassName
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={triggerClassName ?? 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors'}
+        className={triggerClassName ?? 'bg-intess hover:bg-intess/85 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors'}
       >
         {trigger}
       </button>
@@ -72,8 +72,8 @@ export function FormMateria({ especialidades, materia, trigger, triggerClassName
               </select>
             </FormField>
           </div>
-          {materia && materia.cargas > 0 && <p className="text-xs text-gray-500 dark:text-gray-400">{t('conCargasAviso', { cargas: materia.cargas })}</p>}
-          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+          {materia && materia.cargas > 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('conCargasAviso', { cargas: materia.cargas })}</p>}
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
             <button type="submit" disabled={pending} className={submitButtonClass}>
               {pending ? t('guardando') : materia ? t('guardarCambios') : t('crear')}
             </button>

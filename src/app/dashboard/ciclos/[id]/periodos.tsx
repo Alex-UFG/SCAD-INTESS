@@ -14,9 +14,9 @@ function FilaPeriodo({ periodo, editable, cicloActivo }: { periodo: Periodo; edi
   const bloqueado = !editable || periodo.estado === 'Cerrado';
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-3">
+    <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+        <h3 className="font-semibold text-slate-800 dark:text-slate-100">
           {t('periodoN', { numero: periodo.numero })}{' '}
           <Badge tono={TONO_PERIODO[periodo.estado]}>{t(`estadosPeriodo.${periodo.estado}`)}</Badge>
         </h3>
@@ -46,18 +46,18 @@ function FilaPeriodo({ periodo, editable, cicloActivo }: { periodo: Periodo; edi
       <ActionMessageBanner state={state} />
       <form action={formAction} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
         <input type="hidden" name="id_periodo" value={periodo.id_periodo} />
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
+        <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {t('fechaInicio')}
           <input type="date" name="fecha_inicio" defaultValue={periodo.fecha_inicio} disabled={bloqueado} required className={`${inputClass} mt-1 disabled:opacity-60`} />
           {state.errors?.fecha_inicio?.[0] && <span className="text-red-500 text-xs">{state.errors.fecha_inicio[0]}</span>}
         </label>
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
+        <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
           {t('fechaCierre')}
           <input type="date" name="fecha_cierre" defaultValue={periodo.fecha_cierre} disabled={bloqueado} required className={`${inputClass} mt-1 disabled:opacity-60`} />
           {state.errors?.fecha_cierre?.[0] && <span className="text-red-500 text-xs">{state.errors.fecha_cierre[0]}</span>}
         </label>
         {!bloqueado && (
-          <button type="submit" disabled={pending} className="rounded-md border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-900/20">
+          <button type="submit" disabled={pending} className="rounded-md border border-intess px-4 py-2 text-sm font-medium text-intess hover:bg-intess-light disabled:opacity-50 dark:border-intess-accent dark:text-intess-accent dark:hover:bg-intess-accent/10">
             {pending ? t('guardando') : t('guardarFechas')}
           </button>
         )}

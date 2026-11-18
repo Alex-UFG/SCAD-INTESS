@@ -4,7 +4,7 @@ import { db, getTransaction, isDuplicateEntry } from '@/lib/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Estudiante, EstudianteConTutores, EstadoEstudiante, Tutor } from '@/types/persona';
 import { EstudianteFormData, estudianteSchema } from '@/lib/validations/estudiante';
-import { requireSession } from '@/lib/session';
+import { exigirSesion } from '@/lib/session';
 import { requirePermiso } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
 import { revalidatePath } from 'next/cache';
@@ -17,12 +17,6 @@ export type ResultadoEstudiante =
 
 // Las lecturas son endpoints POST publicos si no se verifica la sesion:
 // sin sesion se lanza y la pagina (ya protegida por el layout) no llega aqui.
-async function exigirSesion() {
-  const session = await requireSession();
-  if (!session) throw new Error('UNAUTHORIZED');
-  return session;
-}
-
 export async function getEstudiantes(filtro?: { estado?: EstadoEstudiante }): Promise<Estudiante[]> {
   await exigirSesion();
   try {
@@ -268,6 +262,8 @@ export async function actualizarFotoEstudiante(nie: number, formData: FormData):
   }
 
   const connection = await getTransaction();
+  let nuevaUrl: string | null = null;
+  let confirmado = false;
   try {
     const [rows] = await connection.query<RowDataPacket[]>('SELECT foto_url FROM estudiante WHERE nie = ? FOR UPDATE', [nie]);
     if (rows.length === 0) {
@@ -275,7 +271,7 @@ export async function actualizarFotoEstudiante(nie: number, formData: FormData):
       return { success: false, error: 'noExiste' };
     }
     const anterior = rows[0].foto_url as string | null;
-    const nuevaUrl = quitar ? null : await subirImagen(archivo as File, 'estudiantes', String(nie));
+    nuevaUrl = quitar ? null : await subirImagen(archivo as File, 'estudiantes', String(nie));
 
     await connection.execute('UPDATE estudiante SET foto_url = ? WHERE nie = ?', [nuevaUrl, nie]);
     await registrarAuditoria(connection, {
@@ -287,11 +283,14 @@ export async function actualizarFotoEstudiante(nie: number, formData: FormData):
       datos: { foto_url: nuevaUrl },
     });
     await connection.commit();
+    confirmado = true;
     await borrarImagen(anterior);
     revalidatePath(`/dashboard/estudiantes/${nie}`);
     return { success: true, nie };
   } catch (error) {
     await connection.rollback();
+    // la imagen ya subida quedaria sin fila que la referencie
+    if (!confirmado) await borrarImagen(nuevaUrl);
     console.error('Error actualizando foto:', error);
     return { success: false, error: 'fotoError' };
   } finally {

@@ -20,12 +20,12 @@ export default async function CiclosPage() {
   const rows: RowsTableRow[] = ciclos.map((c) => ({
     key: String(c.id_ciclo),
     cells: [
-      <Link key="a" href={`/dashboard/ciclos/${c.id_ciclo}`} className="font-medium text-blue-600 hover:underline dark:text-blue-400">{c.anio}</Link>,
+      <Link key="a" href={`/dashboard/ciclos/${c.id_ciclo}`} className="font-medium text-intess hover:underline dark:text-intess-accent">{c.anio}</Link>,
       formatFecha(c.fecha_inicio, locale),
       formatFecha(c.fecha_fin, locale),
       <Badge key="e" tono={TONO_CICLO[c.estado]}>{t(`estados.${c.estado}`)}</Badge>,
       c.secciones,
-      <Link key="v" href={`/dashboard/ciclos/${c.id_ciclo}`} className="text-blue-600 hover:underline dark:text-blue-400">{t('verDetalle')}</Link>,
+      <Link key="v" href={`/dashboard/ciclos/${c.id_ciclo}`} className="text-intess hover:underline dark:text-intess-accent">{t('verDetalle')}</Link>,
     ],
     sort: [c.anio, c.fecha_inicio, c.fecha_fin, c.estado, c.secciones, null],
     search: `${c.anio} ${c.estado}`,
@@ -35,8 +35,8 @@ export default async function CiclosPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('title')}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold text-intess-dark dark:text-slate-100">{t('title')}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
         </div>
         {puedeEditar && <FormCiclo />}
       </div>

@@ -17,6 +17,11 @@ export function nombreCompleto(persona: ConNombre): string {
     .join(' ');
 }
 
+/**DATE de MySQL llega como Date (timezone Z): se expone como YYYY-MM-DD */
+export function fechaIso(d: Date | string): string {
+  return typeof d === 'string' ? d.slice(0, 10) : d.toISOString().slice(0, 10);
+}
+
 /**
  * Formatea una fecha de columna DATE en el locale activo. El pool usa timezone
  * 'Z', asi que mysql2 entrega la fecha como medianoche UTC; se formatea en UTC
