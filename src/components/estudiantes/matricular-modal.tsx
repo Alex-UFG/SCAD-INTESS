@@ -30,7 +30,7 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
   const schema = useMemo(() => createMatriculaSchema((key) => t(`errors.${key}`)), [t]);
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const valoresIniciales: Partial<MatriculaInput> = { nie, estado: 'Vigente', fecha_matricula: hoy };
+  const valoresIniciales: Partial<MatriculaInput> = { nie, fecha_matricula: hoy };
 
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<MatriculaInput, unknown, MatriculaFormData>({
     resolver: zodResolver(schema),
@@ -63,7 +63,7 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+        className="text-sm text-intess hover:text-intess-dark font-medium"
       >
         {t('matricularBoton')}
       </button>
@@ -72,13 +72,12 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
         <ServerErrorBanner message={serverError} />
 
         {ciclos.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {t('sinCiclos')}
           </p>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <input type="hidden" {...register('nie')} />
-            <input type="hidden" {...register('estado')} />
 
             <FormField label={t('cicloEscolar')} required error={errors.id_ciclo?.message}>
               <select {...register('id_ciclo')} defaultValue="" className={inputClass}>
@@ -112,7 +111,7 @@ export function MatricularModal({ nie, ciclos, secciones }: MatricularModalProps
               <textarea {...register('observaciones')} rows={3} className={inputClass} />
             </FormField>
 
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
               <button type="submit" disabled={isSubmitting} className={submitButtonClass}>
                 {isSubmitting ? tCommon('saving') : t('matricular')}
               </button>

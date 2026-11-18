@@ -18,14 +18,14 @@ export function Modal({ title, open, onClose, children }: ModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 shadow-lg rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-        <div className="flex justify-between items-center border-b pb-2 mb-4 dark:border-gray-800">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{title}</h2>
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 shadow-lg rounded-lg border border-slate-200 dark:border-slate-800 p-6">
+        <div className="flex justify-between items-center border-b pb-2 mb-4 dark:border-slate-800">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label={t('close')}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
             ✕
           </button>

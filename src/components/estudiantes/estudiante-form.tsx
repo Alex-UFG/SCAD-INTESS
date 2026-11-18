@@ -30,7 +30,6 @@ export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<EstudianteFormInput, unknown, EstudianteFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      estado: 'Activo',
       genero: 'M',
       ...defaultValues,
     },
@@ -49,7 +48,7 @@ export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+    <div className="bg-white dark:bg-slate-900 shadow rounded-lg border border-slate-200 dark:border-slate-800 p-6">
       <ServerErrorBanner message={serverError} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -86,21 +85,14 @@ export function EstudianteForm({ nie, defaultValues }: EstudianteFormProps) {
             </select>
           </FormField>
 
-          <FormField label={t('estado')} required error={errors.estado?.message}>
-            <select {...register('estado')} className={inputClass}>
-              <option value="Activo">{t('estados.Activo')}</option>
-              <option value="Inactivo">{t('estados.Inactivo')}</option>
-              <option value="Retirado">{t('estados.Retirado')}</option>
-              <option value="Egresado">{t('estados.Egresado')}</option>
-            </select>
-          </FormField>
+          {/* El estado se cambia desde el expediente (egreso, retiro por matricula) */}
         </div>
 
         <FormField label={t('direccion')} error={errors.direccion?.message}>
           <textarea {...register('direccion')} rows={3} className={inputClass} />
         </FormField>
 
-        <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
           <button type="submit" disabled={isSubmitting} className={submitButtonClass}>
             {isSubmitting ? tCommon('saving') : esEdicion ? t('guardarCambios') : t('guardar')}
           </button>
