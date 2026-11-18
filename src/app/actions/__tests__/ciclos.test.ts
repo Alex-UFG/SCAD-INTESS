@@ -35,6 +35,7 @@ describe.skipIf(!process.env.DB_HOST)("acciones de ciclos y periodos", () => {
       await db.execute("DELETE FROM log_auditoria WHERE tabla_afectada = 'ciclo_escolar' AND id_registro = ?", [String(id)]);
     }
     await db.execute("DELETE FROM log_auditoria WHERE tabla_afectada IN ('ciclo_escolar','periodo_evaluativo') AND id_usuario = 1 AND ip_origen = '0.0.0.0'");
+    await db.execute("DELETE FROM notificacion"); // el seed no trae notificaciones
     await db.end();
   });
 

@@ -5,6 +5,7 @@ import { getLocale } from "next-intl/server";
 import "./globals.css";
 import { auth } from "@/auth";
 import { Providers } from "@/components/providers";
+import { contarNoLeidas } from "@/app/actions/notificaciones";
 import { AppHeader } from "@/components/layout/app-header";
 
 const geistSans = Geist({
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const [locale, session] = await Promise.all([getLocale(), auth()]);
+  const unreadCount = session ? await contarNoLeidas() : 0;
 
   return (
     <html
@@ -39,6 +41,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               isAuthenticated={Boolean(session)}
               userName={session?.user.name ?? null}
               userEmail={session?.user.email ?? null}
+              unreadCount={unreadCount}
             />
             <main className="flex flex-1 flex-col">{children}</main>
           </Providers>

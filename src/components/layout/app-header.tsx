@@ -24,6 +24,7 @@ interface AppHeaderProps {
   isAuthenticated: boolean;
   userName?: string | null;
   userEmail?: string | null;
+  unreadCount?: number;
 }
 
 export function AppHeader({
@@ -31,6 +32,7 @@ export function AppHeader({
   isAuthenticated,
   userName = null,
   userEmail = null,
+  unreadCount = 0,
 }: AppHeaderProps) {
   const t = useTranslations("ui");
   const { resolvedTheme, setTheme } = useTheme();
@@ -130,6 +132,34 @@ export function AppHeader({
               </svg>
             )}
           </button>
+
+          {isAuthenticated && (
+            <Link
+              href="/dashboard/notificaciones"
+              aria-label={t("notifications")}
+              title={t("notifications")}
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-intess hover:text-intess dark:border-slate-700 dark:text-slate-300 dark:hover:border-intess-accent dark:hover:text-intess-accent"
+            >
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6" />
+                <path d="M10 19a2 2 0 0 0 4 0" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {isAuthenticated && <UserMenu name={userName} email={userEmail} />}
         </div>

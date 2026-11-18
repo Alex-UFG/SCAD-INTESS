@@ -10,6 +10,7 @@ import { exigirSesion } from '@/lib/session';
 import { fechaIso } from '@/lib/format';
 import { requirePermiso } from '@/lib/permisos';
 import { registrarAuditoria } from '@/lib/audit';
+import { notificarPorPermiso } from '@/lib/notificaciones';
 import { createCicloSchema, createPeriodoSchema, ESTADOS_CICLO, ESTADOS_PERIODO } from '@/lib/validations/ciclo';
 import type { ActionState } from '@/types/actions';
 
@@ -371,6 +372,15 @@ export async function cambiarEstadoPeriodo(_prev: ActionState, formData: FormDat
       datosAnteriores: { estado: p.estado },
       datos: { estado },
     });
+    if (estado === 'Cerrado') {
+      await notificarPorPermiso(connection, 'notas.registrar', {
+        tipo: 'Cierre_Periodo',
+        titulo: t('notifCierreTitulo', { numero: p.numero }),
+        mensaje: t('notifCierreMensaje', { numero: p.numero }),
+        referenciaTipo: 'periodo_evaluativo',
+        referenciaId: id_periodo,
+      });
+    }
     await connection.commit();
     revalidatePath(`/dashboard/ciclos/${p.id_ciclo}`);
     revalidatePath('/dashboard/notas');

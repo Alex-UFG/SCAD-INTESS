@@ -12,7 +12,7 @@ interface RegistroAuditoria {
   datosAnteriores?: unknown;
 }
 
-type Ejecutor = Pick<Pool, "execute"> | Pick<PoolConnection, "execute">;
+export type Ejecutor = Pick<Pool, "execute"> | Pick<PoolConnection, "execute">;
 
 async function ipCliente(): Promise<string> {
   try {

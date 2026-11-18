@@ -31,6 +31,7 @@ export type PermisoCodigo =
   | "auditoria.ver";
 
 export const ROL_ADMIN = 1;
+export const ROL_DOCENTE = 5;
 
 interface PermisoRow extends RowDataPacket {
   codigo: string;

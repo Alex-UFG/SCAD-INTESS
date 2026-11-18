@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { getPermisosDeRol } from "@/lib/permisos";
+import { getPermisosDeRol, ROL_DOCENTE } from "@/lib/permisos";
 import { Sidebar } from "@/components/layout/sidebar";
 import { PerfilDocenteGuard } from "@/components/layout/perfil-docente-guard";
 import { usuarioTieneDocente } from "@/app/actions/docentes";
-
-const ROL_DOCENTE = 5;
 
 export default async function DashboardLayout({
   children,
