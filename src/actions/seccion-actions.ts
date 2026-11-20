@@ -2,62 +2,33 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { db } from '@/lib/db'; // Conexión a la base de datos MySQL / TiDB Cloud
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { db } from '@/lib/db'; 
+import { auth } from '@/auth';
 
-// Esquema de validación estricto con Zod para la creación de secciones
 const SeccionSchema = z.object({
-  nombre: z
-    .string()
-    .trim()
-    .min(1, 'El identificador de la sección es obligatorio (ej: A, B)'),
-  grado: z.coerce
-    .number()
-    .int()
-    .min(1, 'El grado mínimo es 1')
-    .max(3, 'El grado máximo es 3 de bachillerato'),
-  id_especialidad: z.coerce
-    .number()
-    .int()
-    .positive({ message: 'Seleccione una especialidad válida' }),
-  id_ciclo: z.coerce
-    .number()
-    .int()
-    .positive({ message: 'Seleccione un ciclo escolar válido' }),
-  dui_docente_guia: z
-    .string()
-    .regex(/^\d{8}-\d{1}$/, { message: 'El DUI del docente guía debe tener formato 00000000-0' })
-    .optional()
-    .nullable()
-    .or(z.literal('')),
-  capacidad_max: z.coerce
-    .number()
-    .int()
-    .min(10, 'La capacidad mínima es de 10 alumnos')
-    .max(60, 'La capacidad máxima permitida es de 60 alumnos')
-    .default(40)
+  nombre: z.string().trim().min(1, 'El identificador es obligatorio'),
+  grado: z.coerce.number().int().min(1).max(3),
+  id_especialidad: z.coerce.number().int().positive(),
+  id_ciclo: z.coerce.number().int().positive(),
+  dui_docente_guia: z.string().regex(/^\d{8}-\d{1}$/, 'Formato 00000000-0').optional().nullable().or(z.literal('')),
+  capacidad_max: z.coerce.number().int().min(10).max(60).default(40)
 });
 
-export type SeccionActionState = {
-  success?: boolean;
-  errors?: Record<string, string[]>;
-  message?: string;
-};
+const EditarSeccionSchema = z.object({
+  id_seccion: z.coerce.number().int().positive(),
+  dui_docente_guia: z.string().regex(/^\d{8}-\d{1}$/, 'Formato 00000000-0').optional().nullable().or(z.literal('')),
+  capacidad_max: z.coerce.number().int().min(10).max(60),
+  activa: z.coerce.number().int().default(1) // 1 activo, 0 inactivo
+});
 
-export async function crearSeccion(
-  prevState: SeccionActionState,
-  formData: FormData
-): Promise<SeccionActionState> {
-  // 1. Verificación de sesión y permisos
-  const session = await getServerSession(authOptions);
-  if (!session || !session.user?.id) {
-    return { success: false, message: 'Sesión no autorizada o caducada.' };
+export type SeccionActionState = { success?: boolean; errors?: Record<string, string[]>; message?: string; };
+
+export async function crearSeccion(prevState: SeccionActionState, formData: FormData): Promise<SeccionActionState> {
+  const session = await auth();
+  if (!session || (session.user.rol !== 1 && session.user.rol !== 4)) {
+    return { success: false, message: 'Sesión no autorizada.' };
   }
 
-  const userId = Number(session.user.id);
-
-  // 2. Extracción y parseo de datos del formulario
   const rawData = {
     nombre: formData.get('nombre'),
     grado: formData.get('grado'),
@@ -68,58 +39,63 @@ export async function crearSeccion(
   };
 
   const validation = SeccionSchema.safeParse(rawData);
-  if (!validation.success) {
-    return {
-      success: false,
-      errors: validation.error.flatten().fieldErrors,
-      message: 'Revise los campos requeridos.'
-    };
-  }
+  if (!validation.success) return { success: false, errors: validation.error.flatten().fieldErrors, message: 'Revise los campos.' };
 
   const data = validation.data;
   const docenteGuia = data.dui_docente_guia ? data.dui_docente_guia : null;
 
   try {
-    // 3. Inserción en la tabla física 'seccion'
     const [result]: any = await db.query(
-      `INSERT INTO seccion 
-        (nombre, grado, id_especialidad, id_ciclo, dui_docente_guia, capacidad_max)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        data.nombre,
-        data.grado,
-        data.id_especialidad,
-        data.id_ciclo,
-        docenteGuia,
-        data.capacidad_max
-      ]
+      `INSERT INTO seccion (nombre, grado, id_especialidad, id_ciclo, dui_docente_guia, capacidad_max, activa) VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
+      [data.nombre, data.grado, data.id_especialidad, data.id_ciclo, docenteGuia, data.capacidad_max]
     );
 
-    const nuevoIdSeccion = result?.insertId || 'N/A';
-
-    // 4. Registro en la tabla 'log_auditoria'
     await db.query(
-      `INSERT INTO log_auditoria 
-        (id_usuario, tabla_afectada, id_registro, tipo_accion, datos_nuevos, ip_origen)
-       VALUES (?, 'seccion', ?, 'INSERT', ?, '127.0.0.1')`,
-      [userId, String(nuevoIdSeccion), JSON.stringify(data)]
+      `INSERT INTO log_auditoria (id_usuario, tabla_afectada, id_registro, tipo_accion, datos_nuevos, ip_origen) VALUES (?, 'seccion', ?, 'INSERT', ?, '127.0.0.1')`,
+      [session.user.id, String(result.insertId), JSON.stringify(data)]
     );
 
     revalidatePath('/dashboard/secciones');
-    return {
-      success: true,
-      message: 'Sección aperturada y lista para proceso de matrícula.'
-    };
+    return { success: true, message: 'Sección aperturada correctamente.' };
   } catch (error: any) {
-    if (error.code === 'ER_DUP_ENTRY') {
-      return {
-        success: false,
-        message: 'Esta sección ya se encuentra aperturada para ese ciclo, grado y especialidad.'
-      };
-    }
-    return {
-      success: false,
-      message: 'Ocurrió un error en el servidor al intentar registrar la sección.'
-    };
+    if (error.code === 'ER_DUP_ENTRY') return { success: false, message: 'Esta sección ya está aperturada.' };
+    return { success: false, message: 'Error en el servidor.' };
+  }
+}
+
+export async function editarSeccion(prevState: SeccionActionState, formData: FormData): Promise<SeccionActionState> {
+  const session = await auth();
+  if (!session || (session.user.rol !== 1 && session.user.rol !== 4)) {
+    return { success: false, message: 'Sesión no autorizada.' };
+  }
+
+  const rawData = {
+    id_seccion: formData.get('id_seccion'),
+    dui_docente_guia: formData.get('dui_docente_guia') || null,
+    capacidad_max: formData.get('capacidad_max'),
+    activa: formData.get('activa')
+  };
+
+  const validation = EditarSeccionSchema.safeParse(rawData);
+  if (!validation.success) return { success: false, message: 'Datos inválidos al editar.' };
+
+  const data = validation.data;
+  const docenteGuia = data.dui_docente_guia ? data.dui_docente_guia : null;
+
+  try {
+    await db.query(
+      `UPDATE seccion SET dui_docente_guia = ?, capacidad_max = ?, activa = ? WHERE id_seccion = ?`,
+      [docenteGuia, data.capacidad_max, data.activa, data.id_seccion]
+    );
+
+    await db.query(
+      `INSERT INTO log_auditoria (id_usuario, tabla_afectada, id_registro, tipo_accion, datos_nuevos, ip_origen) VALUES (?, 'seccion', ?, 'UPDATE', ?, '127.0.0.1')`,
+      [session.user.id, String(data.id_seccion), JSON.stringify(data)]
+    );
+
+    revalidatePath('/dashboard/secciones');
+    return { success: true, message: 'Sección actualizada correctamente.' };
+  } catch (error) {
+    return { success: false, message: 'Error al actualizar la sección.' };
   }
 }

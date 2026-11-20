@@ -3,8 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db'; // Conexión mysql2 / TiDB Cloud
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/auth';
 
 // Esquema de validación estricto con Zod
 const DocenteProfileSchema = z.object({
@@ -31,7 +30,7 @@ export async function completarPerfilDocente(
   formData: FormData
 ): Promise<DocenteActionState> {
   // 1. Verificación de sesión activa
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session || !session.user?.id) {
     return { success: false, message: 'Sesión no autorizada o caducada.' };
   }

@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "src/actions/ciclo-actions.ts"  ],
   "exclude": ["node_modules"]
 }
