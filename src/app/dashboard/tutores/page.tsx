@@ -1,5 +1,6 @@
 import { getTutores } from '@/app/actions/tutores';
 import Link from 'next/link';
+import BotonEliminarTutor from './BotonEliminarTutor';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,9 +39,13 @@ export default async function TutoresPage() {
                     {tutor.email && <div className="text-xs">{tutor.email}</div>}
                   </td>
                   <td className="p-4 text-sm">
-                    <Link href={`/dashboard/tutores/${tutor.dui_tutor}`} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline">
-                      Ver Ficha
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link href={`/dashboard/tutores/${tutor.dui_tutor}`} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline">
+                        Ver Ficha / Editar
+                      </Link>
+                      <span className="text-gray-300 dark:text-gray-700">|</span>
+                      <BotonEliminarTutor dui={tutor.dui_tutor} nombre={`${tutor.primer_nombre} ${tutor.primer_apellido}`} />
+                    </div>
                   </td>
                 </tr>
               ))}

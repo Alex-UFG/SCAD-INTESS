@@ -29,9 +29,22 @@ export default async function EstudiantesPage() {
             <tbody>
               {estudiantes.map((est) => (
                 <tr key={est.nie} className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <td className="p-4 text-sm text-gray-900 dark:text-gray-300">{est.nie}</td>
+                  <td className="p-4 text-sm text-gray-900 dark:text-gray-300 font-mono font-medium">{est.nie}</td>
                   <td className="p-4 text-sm text-gray-900 dark:text-gray-300">
-                    {est.primer_nombre} {est.segundo_nombre} {est.primer_apellido} {est.segundo_apellido}
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden flex items-center justify-center flex-shrink-0 text-xs font-semibold text-gray-500">
+                        {est.foto_url ? (
+                          <img src={est.foto_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          `${est.primer_nombre[0]}${est.primer_apellido[0]}`
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                          {est.primer_nombre} {est.segundo_nombre} {est.primer_apellido} {est.segundo_apellido}
+                        </div>
+                      </div>
+                    </div>
                   </td>
                   <td className="p-4 text-sm">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${

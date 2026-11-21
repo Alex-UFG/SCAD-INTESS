@@ -148,6 +148,17 @@ export default function NuevoEstudiantePage() {
             {errors.direccion && <p className="text-red-500 text-xs">{errors.direccion.message}</p>}
           </div>
 
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">URL de Fotografía (Opcional)</label>
+            <input 
+              type="text" 
+              placeholder="https://... o dejar en blanco para subirla después"
+              {...register('foto_url')} 
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+            {errors.foto_url && <p className="text-red-500 text-xs">{errors.foto_url.message}</p>}
+          </div>
+
           <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
             <button
               type="submit"

@@ -11,6 +11,7 @@ export const estudianteSchema = z.object({
   }),
   genero: z.enum(['M', 'F'], { message: "Seleccione un género" }),
   direccion: z.string().max(200).nullable().optional(),
+  foto_url: z.string().max(255).nullable().optional(),
   estado: z.enum(['Activo', 'Inactivo', 'Retirado', 'Egresado']).default('Activo'),
 });
 

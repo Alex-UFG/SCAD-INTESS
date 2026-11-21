@@ -1,7 +1,10 @@
 import { getEstudiantePorNie } from '@/app/actions/estudiantes';
-import { getMatriculasPorEstudiante } from '@/app/actions/matriculas';
+import { getMatriculasPorEstudiante, getSeccionesDisponibles, getCiclosEscolares } from '@/app/actions/matriculas';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import EstudianteModals from './EstudianteModals';
+import BotonDesvincular from './BotonDesvincular';
+import FotoEstudianteUploader from './FotoEstudianteUploader';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +13,11 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
   const nie = parseInt(resolvedParams.nie);
   if (isNaN(nie)) return notFound();
 
-  const [estudiante, matriculas] = await Promise.all([
+  const [estudiante, matriculas, secciones, ciclos] = await Promise.all([
     getEstudiantePorNie(nie),
-    getMatriculasPorEstudiante(nie)
+    getMatriculasPorEstudiante(nie),
+    getSeccionesDisponibles(),
+    getCiclosEscolares()
   ]);
 
   if (!estudiante) return notFound();
@@ -36,9 +41,21 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
         {/* Datos Personales */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white dark:bg-gray-900 shadow rounded-lg border border-gray-200 dark:border-gray-800 p-6">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 border-b pb-2 dark:border-gray-800">
-              Datos Personales
-            </h2>
+            <div className="flex justify-between items-center mb-4 border-b pb-2 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                Datos Personales
+              </h2>
+              <Link href={`/dashboard/estudiantes/${nie}?modal=editar_estudiante`} className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                Editar
+              </Link>
+            </div>
+
+            <FotoEstudianteUploader
+              nie={nie}
+              fotoUrl={estudiante.foto_url}
+              nombreCompleto={`${estudiante.primer_nombre} ${estudiante.primer_apellido}`}
+            />
+
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">NIE</p>
@@ -85,10 +102,9 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 Tutores y Responsables
               </h2>
-              {/* Botón para abrir modal de vincular tutor */}
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+              <Link href={`/dashboard/estudiantes/${nie}?modal=vincular_tutor`} className="text-sm text-blue-600 hover:text-blue-800 font-medium">
                 + Vincular Tutor
-              </button>
+              </Link>
             </div>
             
             {estudiante.tutores && estudiante.tutores.length > 0 ? (
@@ -105,6 +121,9 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
                       <p className="text-sm text-gray-500">DUI: {tutor.dui_tutor} • Parentesco: {tutor.pivot.parentesco}</p>
                       <p className="text-sm text-gray-500">Tel: {tutor.telefono_principal}</p>
                     </div>
+                    <div className="flex items-center">
+                      <BotonDesvincular nie={nie} duiTutor={tutor.dui_tutor} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -119,9 +138,9 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 Historial de Matrículas
               </h2>
-              <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+              <Link href={`/dashboard/estudiantes/${nie}?modal=matricular`} className="text-sm text-blue-600 hover:text-blue-800 font-medium">
                 + Matricular
-              </button>
+              </Link>
             </div>
             
             {matriculas && matriculas.length > 0 ? (
@@ -134,6 +153,7 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
                       <th className="pb-2 font-medium">Grado</th>
                       <th className="pb-2 font-medium">Especialidad</th>
                       <th className="pb-2 font-medium">Estado</th>
+                      <th className="pb-2 font-medium text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -145,10 +165,32 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
                         <td className="py-3">{mat.especialidad_nombre}</td>
                         <td className="py-3">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            mat.estado === 'Vigente' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+                            mat.estado === 'Vigente' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
+                            mat.estado === 'Trasladado' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                            'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
                           }`}>
                             {mat.estado}
                           </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          {mat.estado === 'Vigente' ? (
+                            <div className="flex justify-end gap-2 text-xs">
+                              <Link
+                                href={`/dashboard/estudiantes/${nie}?modal=trasladar&id_matricula=${mat.id_matricula}&id_seccion=${mat.id_seccion}`}
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                              >
+                                Trasladar
+                              </Link>
+                              <Link
+                                href={`/dashboard/estudiantes/${nie}?modal=retirar&id_matricula=${mat.id_matricula}`}
+                                className="text-red-600 hover:text-red-800 dark:text-red-400 font-medium bg-red-50 dark:bg-red-900/20 hover:bg-red-100 px-2 py-1 rounded transition-colors"
+                              >
+                                Retirar
+                              </Link>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Sin acciones</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -159,9 +201,9 @@ export default async function ExpedienteEstudiantePage({ params }: { params: Pro
               <p className="text-sm text-gray-500 italic">El estudiante no posee matrículas registradas.</p>
             )}
           </div>
-
         </div>
       </div>
+      <EstudianteModals nie={nie} estudiante={estudiante} secciones={secciones} ciclos={ciclos} />
     </div>
   );
 }

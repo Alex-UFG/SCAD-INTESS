@@ -5,6 +5,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { Estudiante, EstudianteConTutores, Tutor } from '@/types/persona';
 import { EstudianteFormData, estudianteSchema } from '@/lib/validations/estudiante';
 import { revalidatePath } from 'next/cache';
+import { requireSession, NO_AUTH } from '@/lib/require-session';
 
 export async function getEstudiantes(): Promise<Estudiante[]> {
   try {
@@ -53,14 +54,18 @@ export async function getEstudiantePorNie(nie: number): Promise<EstudianteConTut
   }
 }
 
+import fs from 'fs/promises';
+import path from 'path';
+
 export async function createEstudiante(data: EstudianteFormData) {
+  if (!(await requireSession())) return NO_AUTH;
   const parsed = estudianteSchema.safeParse(data);
   if (!parsed.success) {
     return { success: false, errors: parsed.error.flatten().fieldErrors };
   }
 
   try {
-    const { nie, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado } = parsed.data;
+    const { nie, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, foto_url, estado } = parsed.data;
     
     // revisa  if NIE de verdad existe
     const [existing] = await db.query<RowDataPacket[]>('SELECT nie FROM estudiante WHERE nie = ?', [nie]);
@@ -70,9 +75,9 @@ export async function createEstudiante(data: EstudianteFormData) {
 
     await db.execute<ResultSetHeader>(
       `INSERT INTO estudiante 
-        (nie, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [nie, primer_nombre, segundo_nombre ?? null, primer_apellido, segundo_apellido ?? null, fecha_nacimiento, genero, direccion ?? null, estado]
+        (nie, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, foto_url, estado) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [nie, primer_nombre, segundo_nombre ?? null, primer_apellido, segundo_apellido ?? null, fecha_nacimiento, genero, direccion ?? null, foto_url ?? null, estado]
     );
 
     revalidatePath('/dashboard/estudiantes');
@@ -84,20 +89,21 @@ export async function createEstudiante(data: EstudianteFormData) {
 }
 
 export async function updateEstudiante(nie: number, data: EstudianteFormData) {
+  if (!(await requireSession())) return NO_AUTH;
   const parsed = estudianteSchema.safeParse(data);
   if (!parsed.success) {
     return { success: false, errors: parsed.error.flatten().fieldErrors };
   }
 
   try {
-    const { primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, estado } = parsed.data;
+    const { primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, genero, direccion, foto_url, estado } = parsed.data;
 
     await db.execute<ResultSetHeader>(
       `UPDATE estudiante 
        SET primer_nombre = ?, segundo_nombre = ?, primer_apellido = ?, segundo_apellido = ?, 
-           fecha_nacimiento = ?, genero = ?, direccion = ?, estado = ? 
+           fecha_nacimiento = ?, genero = ?, direccion = ?, foto_url = ?, estado = ? 
        WHERE nie = ?`,
-      [primer_nombre, segundo_nombre ?? null, primer_apellido, segundo_apellido ?? null, fecha_nacimiento, genero, direccion ?? null, estado, nie]
+      [primer_nombre, segundo_nombre ?? null, primer_apellido, segundo_apellido ?? null, fecha_nacimiento, genero, direccion ?? null, foto_url ?? null, estado, nie]
     );
 
     revalidatePath('/dashboard/estudiantes');
@@ -106,5 +112,84 @@ export async function updateEstudiante(nie: number, data: EstudianteFormData) {
   } catch (error) {
     console.error('Error updating estudiante:', error);
     return { success: false, error: 'Ocurrió un error al actualizar el estudiante.' };
+  }
+}
+
+export async function uploadFotoEstudiante(nie: number, formData: FormData) {
+  if (!(await requireSession())) return NO_AUTH;
+  try {
+    const file = formData.get('foto') as File | null;
+    if (!file || file.size === 0) {
+      return { success: false, error: 'No se seleccionó ningún archivo de imagen.' };
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      return { success: false, error: 'Formato no soportado. Debe ser JPG, PNG, WEBP o GIF.' };
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return { success: false, error: 'La imagen excede el límite de 5MB.' };
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+    const ext = EXT[file.type];
+    const filename = `estudiante_${nie}_${Date.now()}.${ext}`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'estudiantes');
+    await fs.mkdir(uploadDir, { recursive: true });
+    
+    const filePath = path.join(uploadDir, filename);
+    await fs.writeFile(filePath, buffer);
+
+    const foto_url = `/uploads/estudiantes/${filename}`;
+
+    const anterior = await getFotoActual(nie);
+    await db.execute(
+      'UPDATE estudiante SET foto_url = ? WHERE nie = ?',
+      [foto_url, nie]
+    );
+    await borrarArchivoFoto(anterior);
+
+    revalidatePath('/dashboard/estudiantes');
+    revalidatePath(`/dashboard/estudiantes/${nie}`);
+
+    return { success: true, foto_url };
+  } catch (error) {
+    console.error('Error uploading photo:', error);
+    return { success: false, error: 'Ocurrió un error al subir la fotografía.' };
+  }
+}
+
+export async function removeFotoEstudiante(nie: number) {
+  if (!(await requireSession())) return NO_AUTH;
+  try {
+    const anterior = await getFotoActual(nie);
+    await db.execute('UPDATE estudiante SET foto_url = NULL WHERE nie = ?', [nie]);
+    await borrarArchivoFoto(anterior);
+    revalidatePath('/dashboard/estudiantes');
+    revalidatePath(`/dashboard/estudiantes/${nie}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error removing photo:', error);
+    return { success: false, error: 'Error al eliminar la foto.' };
+  }
+}
+
+async function getFotoActual(nie: number): Promise<string | null> {
+  const [rows] = await db.query<RowDataPacket[]>('SELECT foto_url FROM estudiante WHERE nie = ?', [nie]);
+  return rows[0]?.foto_url ?? null;
+}
+
+/** Elimina del disco una foto subida localmente (solo rutas /uploads/estudiantes/). */
+async function borrarArchivoFoto(url: string | null) {
+  if (!url || !url.startsWith('/uploads/estudiantes/')) return;
+  const nombre = path.basename(url);
+  try {
+    await fs.unlink(path.join(process.cwd(), 'public', 'uploads', 'estudiantes', nombre));
+  } catch {
+    /* el archivo ya no existe: ignorar */
   }
 }
