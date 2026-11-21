@@ -467,7 +467,21 @@
       "Abierto": "Open",
       "Cerrado": "Closed",
       "Pendiente": "Pending"
-    }
+    },
+    "sinPeriodos": "No grading periods are registered.",
+    "abrir": "Open period",
+    "cerrar": "Close period",
+    "confirmarAbrir": "Do you want to open this grading period?",
+    "confirmarCerrar": "Do you want to close this grading period? This action will start the 72-hour countdown.",
+    "procesando": "Processing...",
+    "exitoAbrir": "Period opened successfully.",
+    "exitoCerrar": "Period closed successfully.",
+    "errorOperacion": "The operation could not be completed.",
+    "editarFechas": "Edit dates",
+    "guardarFechas": "Save dates",
+    "cancelar": "Cancel",
+    "confirmarFechas": "Do you confirm updating this period's dates?",
+    "exitoFechas": "Dates updated successfully."
   },
   "notas": {
     "title": "Grade entry",
@@ -492,6 +506,9 @@
     "estudiante": "Student",
     "actividad1": "Activity 1 (35%)",
     "actividad2": "Activity 2 (35%)",
+    "act1": "Activity 1 (35%)",
+    "act2": "Activity 2 (35%)",
+    "exam": "Exam (30%)",
     "examen": "Exam (30%)",
     "promedio": "Average",
     "estado": "Status",

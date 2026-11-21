@@ -467,7 +467,21 @@
       "Abierto": "Abierto",
       "Cerrado": "Cerrado",
       "Pendiente": "Pendiente"
-    }
+    },
+    "sinPeriodos": "No hay períodos evaluativos registrados.",
+    "abrir": "Abrir período",
+    "cerrar": "Cerrar período",
+    "confirmarAbrir": "¿Deseas abrir este período evaluativo?",
+    "confirmarCerrar": "¿Deseas cerrar este período evaluativo? Esta acción iniciará el conteo de las 72 horas.",
+    "procesando": "Procesando...",
+    "exitoAbrir": "Período abierto correctamente.",
+    "exitoCerrar": "Período cerrado correctamente.",
+    "errorOperacion": "No fue posible completar la operación.",
+    "editarFechas": "Editar fechas",
+    "guardarFechas": "Guardar fechas",
+    "cancelar": "Cancelar",
+    "confirmarFechas": "¿Confirmas que deseas actualizar las fechas de este período?",
+    "exitoFechas": "Fechas actualizadas correctamente."
   },
   "notas": {
     "title": "Registro de notas",
@@ -492,6 +506,9 @@
     "estudiante": "Estudiante",
     "actividad1": "Actividad 1 (35%)",
     "actividad2": "Actividad 2 (35%)",
+    "act1": "Actividad 1 (35%)",
+    "act2": "Actividad 2 (35%)",
+    "exam": "Examen (30%)",
     "examen": "Examen (30%)",
     "promedio": "Promedio",
     "estado": "Estado",
