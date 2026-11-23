@@ -1,182 +1,86 @@
 'use client';
 
 import { useActionState } from 'react';
-import { completarPerfilDocente, DocenteActionState } from '@/actions/docente-actions';
+import { useTranslations } from 'next-intl';
+import { completarPerfilDocente, editarPerfilDocente, type Especialidad, type Docente } from '@/app/actions/docentes';
+import type { ActionState } from '@/types/actions';
+import { FormField, ActionMessageBanner, inputClass, submitButtonClass } from '@/components/ui/form-field';
 
-interface EspecialidadOption {
-  id_especialidad: number;
-  nombre: string;
+interface Props {
+  especialidades: Especialidad[];
+  /**Con docente: edicion del perfil existente (DUI inmutable) */
+  docente?: Docente;
 }
 
-export function FormCompletarPerfilDocente({ especialidades }: { especialidades: EspecialidadOption[] }) {
-  const initialState: DocenteActionState = { success: false };
-  const [state, formAction, isPending] = useActionState(completarPerfilDocente, initialState);
+export function FormCompletarPerfilDocente({ especialidades, docente }: Props) {
+  const t = useTranslations('docentes');
+  const [state, formAction, isPending] = useActionState(docente ? editarPerfilDocente : completarPerfilDocente, {} as ActionState);
 
   return (
-    <div className="max-w-3xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 shadow-sm">
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-5 mb-6">
-        <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded">
-          Dev 3 · Estructura Académica
-        </span>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white mt-2">
-          Completar Perfil Profesional Docente
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-          Requisito mandatario según la Ley de la Carrera Docente para habilitar la captura de asistencia y calificaciones (Cierre de Gap N.° 1).
-        </p>
-      </div>
+    <div className="bg-white dark:bg-slate-900 shadow rounded-lg border border-slate-200 dark:border-slate-800 p-6">
+      <ActionMessageBanner state={state} />
 
-      {state.message && (
-        <div className={`p-4 rounded-lg mb-6 text-sm font-medium ${
-          state.success 
-            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300' 
-            : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
-        }`}>
-          {state.message}
-        </div>
+      {especialidades.length === 0 ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t('sinEspecialidades')}</p>
+      ) : (
+        <form action={formAction} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label={t('dui')} error={state.errors?.dui_docente?.[0]}>
+              <input
+                type="text"
+                name="dui_docente"
+                placeholder="01234567-8"
+                maxLength={10}
+                required
+                defaultValue={docente?.dui_docente}
+                readOnly={Boolean(docente)}
+                className={`${inputClass} ${docente ? 'opacity-60 cursor-not-allowed' : ''}`}
+              />
+            </FormField>
+
+            <FormField label={t('telefono')} error={state.errors?.telefono?.[0]}>
+              <input type="text" name="telefono" placeholder="7000-0000" maxLength={9} required defaultValue={docente?.telefono ?? ''} className={inputClass} />
+            </FormField>
+
+            <FormField label={t('primerNombre')} error={state.errors?.primer_nombre?.[0]}>
+              <input type="text" name="primer_nombre" required defaultValue={docente?.primer_nombre} className={inputClass} />
+            </FormField>
+
+            <FormField label={t('segundoNombre')} error={state.errors?.segundo_nombre?.[0]}>
+              <input type="text" name="segundo_nombre" defaultValue={docente?.segundo_nombre ?? ''} className={inputClass} />
+            </FormField>
+
+            <FormField label={t('primerApellido')} error={state.errors?.primer_apellido?.[0]}>
+              <input type="text" name="primer_apellido" required defaultValue={docente?.primer_apellido} className={inputClass} />
+            </FormField>
+
+            <FormField label={t('segundoApellido')} error={state.errors?.segundo_apellido?.[0]}>
+              <input type="text" name="segundo_apellido" defaultValue={docente?.segundo_apellido ?? ''} className={inputClass} />
+            </FormField>
+
+            <FormField label={t('especialidad')} error={state.errors?.id_especialidad?.[0]}>
+              <select name="id_especialidad" required defaultValue={docente?.id_especialidad ?? ''} className={inputClass}>
+                <option value="" disabled>{t('seleccioneEspecialidad')}</option>
+                {especialidades.map((esp) => (
+                  <option key={esp.id_especialidad} value={esp.id_especialidad}>
+                    {esp.nombre}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            <FormField label={t('fechaIngreso')} error={state.errors?.fecha_ingreso?.[0]}>
+              <input type="date" name="fecha_ingreso" required defaultValue={docente?.fecha_ingreso} className={inputClass} />
+            </FormField>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
+            <button type="submit" disabled={isPending} className={submitButtonClass}>
+              {isPending ? t('guardando') : docente ? t('guardarCambios') : t('guardar')}
+            </button>
+          </div>
+        </form>
       )}
-
-      <form action={formAction} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* DUI */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              DUI (con guion) *
-            </label>
-            <input
-              type="text"
-              name="dui_docente"
-              placeholder="01234567-8"
-              maxLength={10}
-              required
-              className="w-full px-3.5 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-            {state.errors?.dui_docente && (
-              <p className="text-xs text-rose-600 mt-1">{state.errors.dui_docente[0]}</p>
-            )}
-          </div>
-
-          {/* Teléfono */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Teléfono de Contacto *
-            </label>
-            <input
-              type="text"
-              name="telefono"
-              placeholder="7000-0000"
-              maxLength={9}
-              required
-              className="w-full px-3.5 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-            {state.errors?.telefono && (
-              <p className="text-xs text-rose-600 mt-1">{state.errors.telefono[0]}</p>
-            )}
-          </div>
-
-          {/* Primer Nombre */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Primer Nombre *
-            </label>
-            <input
-              type="text"
-              name="primer_nombre"
-              required
-              className="w-full px-3.5 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-            {state.errors?.primer_nombre && (
-              <p className="text-xs text-rose-600 mt-1">{state.errors.primer_nombre[0]}</p>
-            )}
-          </div>
-
-          {/* Segundo Nombre */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Segundo Nombre
-            </label>
-            <input
-              type="text"
-              name="segundo_nombre"
-              className="w-full px-3.5 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Primer Apellido */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Primer Apellido *
-            </label>
-            <input
-              type="text"
-              name="primer_apellido"
-              required
-              className="w-full px-3.5 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-            {state.errors?.primer_apellido && (
-              <p className="text-xs text-rose-600 mt-1">{state.errors.primer_apellido[0]}</p>
-            )}
-          </div>
-
-          {/* Segundo Apellido */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Segundo Apellido
-            </label>
-            <input
-              type="text"
-              name="segundo_apellido"
-              className="w-full px-3.5 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
-
-          {/* Especialidad Asignada */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Área / Especialidad Técnica *
-            </label>
-            <select
-              name="id_especialidad"
-              required
-              defaultValue=""
-              className="w-full px-3.5 py-2 border rounded-lg bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="" disabled>Seleccione especialidad...</option>
-              {especialidades.map(esp => (
-                <option key={esp.id_especialidad} value={esp.id_especialidad}>
-                  {esp.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Fecha de Ingreso */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Fecha de Inicio Laboral *
-            </label>
-            <input
-              type="date"
-              name="fecha_ingreso"
-              required
-              className="w-full px-3.5 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
-            {state.errors?.fecha_ingreso && (
-              <p className="text-xs text-rose-600 mt-1">{state.errors.fecha_ingreso[0]}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="pt-4 flex justify-end">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors disabled:opacity-50"
-          >
-            {isPending ? 'Validando y Guardando...' : 'Guardar y Habilitar Docente'}
-          </button>
-        </div>
-      </form>
     </div>
   );
 }

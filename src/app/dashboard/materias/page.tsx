@@ -1,87 +1,76 @@
-import { redirect } from 'next/navigation';
-import { RowDataPacket } from 'mysql2';
-import { auth } from '@/auth';
-import { db } from '@/lib/db';
+import { getTranslations } from 'next-intl/server';
+import { getMaterias, toggleMateriaActiva } from '@/app/actions/materias';
+import { getEspecialidadesActivas } from '@/app/actions/docentes';
+import { requirePermiso } from '@/lib/permisos';
+import { RowsTable, type RowsTableRow } from '@/components/ui/rows-table';
+import { Badge } from '@/components/ui/badge';
+import { ActionButton } from '@/components/ui/action-button';
 import { FormMateria } from './form-materia';
 
-interface MateriaRow extends RowDataPacket {
-  cod_materia: string;
-  nombre: string;
-  grado: number;
-  unidades_valorativas: number;
-  activa: number;
-  especialidad_nombre: string;
-}
-
-interface EspecialidadRow extends RowDataPacket {
-  id_especialidad: number;
-  nombre: string;
-}
+export const dynamic = 'force-dynamic';
 
 export default async function MateriasPage() {
-  const session = await auth();
-  if (!session) redirect('/auth');
+  const [t, materias, especialidades, editor] = await Promise.all([
+    getTranslations('materias'),
+    getMaterias(),
+    getEspecialidadesActivas(),
+    requirePermiso('config.catalogos'),
+  ]);
+  const puedeEditar = Boolean(editor);
+  const linkClass = 'text-intess hover:underline dark:text-intess-accent text-sm font-medium bg-transparent p-0';
 
-  // Obtenemos especialidades para el formulario
-  const [especialidades] = await db.query<EspecialidadRow[]>(
-    'SELECT id_especialidad, nombre FROM especialidad WHERE activa = TRUE ORDER BY nombre ASC'
-  );
-
-  // Obtenemos materias con JOIN a especialidad para mostrar en la tabla
-  const [materias] = await db.query<MateriaRow[]>(
-    `SELECT m.cod_materia, m.nombre, m.grado, m.unidades_valorativas, m.activa, e.nombre as especialidad_nombre
-     FROM materia m
-     INNER JOIN especialidad e ON m.id_especialidad = e.id_especialidad
-     ORDER BY m.grado ASC, m.nombre ASC`
-  );
+  const rows: RowsTableRow[] = materias.map((m) => ({
+    key: m.cod_materia,
+    cells: [
+      <span key="c" className="font-mono">{m.cod_materia}</span>,
+      m.nombre,
+      m.especialidad_nombre,
+      `${m.grado}°`,
+      m.unidades_valorativas,
+      <Badge key="a" tono={m.activa ? 'verde' : 'gris'}>{t(m.activa ? 'activa' : 'inactiva')}</Badge>,
+      m.cargas,
+      puedeEditar ? (
+        <span key="x" className="flex flex-wrap gap-2">
+          <FormMateria especialidades={especialidades} materia={m} trigger={t('editar')} triggerClassName={linkClass} />
+          <ActionButton
+            action={toggleMateriaActiva}
+            fields={{ cod_materia: m.cod_materia, activa: m.activa ? '0' : '1' }}
+            label={t(m.activa ? 'desactivar' : 'activar')}
+            danger={m.activa}
+            confirm={m.activa ? { title: t('desactivar'), text: t('confirmarDesactivar', { nombre: m.nombre }) } : undefined}
+          />
+        </span>
+      ) : null,
+    ],
+    sort: [m.cod_materia, m.nombre, m.especialidad_nombre, m.grado, m.unidades_valorativas, m.activa ? 1 : 0, m.cargas, null],
+    search: `${m.cod_materia} ${m.nombre} ${m.especialidad_nombre} ${m.grado}`,
+  }));
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Catálogo de Materias</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 mb-6">
-        Gestión de asignaturas por especialidad y grado.
-      </p>
-
-      <FormMateria especialidades={especialidades} />
-
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Código</th>
-                <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Nombre de Materia</th>
-                <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Grado</th>
-                <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Especialidad</th>
-                <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">UV</th>
-                <th className="px-5 py-3 font-medium text-slate-500 dark:text-slate-400">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {materias.length === 0 ? (
-                <tr><td colSpan={6} className="px-5 py-4 text-center text-slate-500">No hay materias en el catálogo.</td></tr>
-              ) : (
-                materias.map((m) => (
-                  <tr key={m.cod_materia}>
-                    <td className="px-5 py-3 font-mono font-medium text-blue-600 dark:text-blue-400">{m.cod_materia}</td>
-                    <td className="px-5 py-3 font-semibold text-slate-900 dark:text-slate-100">{m.nombre}</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{m.grado}°</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{m.especialidad_nombre}</td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{m.unidades_valorativas}</td>
-                    <td className="px-5 py-3">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        m.activa ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'
-                      }`}>
-                        {m.activa ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+    <div className="p-6 space-y-6">
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-intess-dark dark:text-slate-100">{t('title')}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t('subtitle')}</p>
         </div>
+        {puedeEditar && <FormMateria especialidades={especialidades} trigger={t('nueva')} />}
       </div>
+
+      <RowsTable
+        columns={[
+          { header: t('colCodigo'), sortable: true },
+          { header: t('colNombre'), sortable: true },
+          { header: t('colEspecialidad'), sortable: true },
+          { header: t('colGrado'), sortable: true },
+          { header: t('colUnidades'), sortable: true, align: 'right' },
+          { header: t('colEstado'), sortable: true },
+          { header: t('colCargas'), sortable: true, align: 'right' },
+          { header: t('colAcciones') },
+        ]}
+        rows={rows}
+        emptyText={t('empty')}
+        defaultSort={{ column: 3, dir: 'asc' }}
+      />
     </div>
   );
 }

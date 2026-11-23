@@ -1,6 +1,8 @@
 import type { RowDataPacket } from "mysql2";
 import { db } from "@/lib/db";
 
+export const PREF_CAMBIAR_PASSWORD = "cambiar_password";
+
 interface PreferenciaRow extends RowDataPacket {
   clave: string;
   valor: string;

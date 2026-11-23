@@ -13,8 +13,13 @@ interface UsuarioRow extends RowDataPacket {
   nombre: string | null;
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET ?? "scad-intess-dev-secret-change-me",
+if (!process.env.AUTH_SECRET) {
+  throw new Error("AUTH_SECRET es obligatorio (genera uno con: npx auth secret)");
+}
+
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
+  secret: process.env.AUTH_SECRET,
+  // Vercel sirve tras proxy: se confia en el host de la peticion
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/auth" },
@@ -60,10 +65,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.rol = user.rol;
+      }
+      if (trigger === "update" && typeof session?.user?.name === "string") {
+        token.name = session.user.name;
       }
       return token;
     },

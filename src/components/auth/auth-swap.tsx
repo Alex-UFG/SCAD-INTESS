@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { loginAction, registerAction } from "@/app/actions/auth";
+import { setThemeAction } from "@/app/actions/theme";
 
 type Mode = "login" | "register";
 
@@ -82,11 +83,12 @@ function PasswordToggle({
 export function AuthSwap() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const [mode, setMode] = useState<Mode>("login");
   const [authError, setAuthError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
@@ -149,8 +151,11 @@ export function AuthSwap() {
     setNotice(null);
     const result = await loginAction(values);
     if (result.ok) {
-      // Preferencia de tema guardada en BD: se aplica al entrar.
-      if (result.theme) setTheme(result.theme);
+      if (theme === "light" || theme === "dark") {
+        if (theme !== result.theme) void setThemeAction(theme);
+      } else if (result.theme) {
+        setTheme(result.theme);
+      }
       router.push("/dashboard");
       router.refresh();
       return;
@@ -273,13 +278,24 @@ export function AuthSwap() {
                       />
                       {t("remember")}
                     </label>
-                    <a
-                      href="#"
+                    <button
+                      type="button"
+                      onClick={() => setForgotOpen((v) => !v)}
+                      aria-expanded={forgotOpen}
                       className="font-medium text-intess hover:underline dark:text-intess-accent"
                     >
                       {t("forgot")}
-                    </a>
+                    </button>
                   </div>
+
+                  {forgotOpen && (
+                    <p
+                      role="note"
+                      className="rounded-md border border-intess/20 bg-intess-light px-3 py-2 text-xs text-intess dark:border-intess-accent/30 dark:bg-intess/15 dark:text-intess-accent"
+                    >
+                      {t("forgotHint")}
+                    </p>
+                  )}
 
                   <button
                     type="submit"

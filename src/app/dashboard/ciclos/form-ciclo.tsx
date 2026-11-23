@@ -1,43 +1,58 @@
 'use client';
 
-import { useActionState } from 'react';
-import { crearCiclo, CicloActionState } from '@/actions/ciclo-actions';
+import { useActionState, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { crearCiclo, editarCiclo, type Ciclo } from '@/app/actions/ciclos';
+import type { ActionState } from '@/types/actions';
+import { FormField, ActionMessageBanner, inputClass, submitButtonClass } from '@/components/ui/form-field';
 
-export function FormCiclo() {
-  const initialState: CicloActionState = { success: false };
-  const [state, formAction, isPending] = useActionState(crearCiclo, initialState);
+/**Crea un ciclo (sin `ciclo`) o edita sus datos basicos (con `ciclo`) */
+export function FormCiclo({ ciclo }: { ciclo?: Ciclo }) {
+  const t = useTranslations('ciclos');
+  const [open, setOpen] = useState(Boolean(ciclo));
+  const [state, formAction, pending] = useActionState(ciclo ? editarCiclo : crearCiclo, {} as ActionState);
+  const anioSugerido = new Date().getFullYear() + 1;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aperturar Nuevo Ciclo Escolar</h3>
-      
-      {state.message && (
-        <div className={`p-3 rounded-md mb-4 text-sm font-medium ${state.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
-          {state.message}
-        </div>
+    <>
+      {!ciclo && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="bg-intess hover:bg-intess/85 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+        >
+          {open ? t('cerrarForm') : t('nuevo')}
+        </button>
       )}
 
-      <form action={formAction} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Año Escolar</label>
-            <input type="number" name="anio" defaultValue={new Date().getFullYear()} required className="w-full px-3 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fecha de Inicio</label>
-            <input type="date" name="fecha_inicio" required className="w-full px-3 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fecha de Fin</label>
-            <input type="date" name="fecha_fin" required className="w-full px-3 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
+      {open && (
+        <div className={ciclo ? '' : 'w-full bg-white dark:bg-slate-900 shadow rounded-lg border border-slate-200 dark:border-slate-800 p-6'}>
+          {!ciclo && (
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 border-b pb-2 mb-4 dark:border-slate-800">{t('formTitle')}</h2>
+          )}
+          <ActionMessageBanner state={state} />
+          <form action={formAction} className="space-y-6">
+            {ciclo && <input type="hidden" name="id_ciclo" value={ciclo.id_ciclo} />}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField label={t('anio')} required error={state.errors?.anio?.[0]}>
+                <input type="number" name="anio" min={2020} max={2100} required defaultValue={ciclo?.anio ?? anioSugerido} className={inputClass} />
+              </FormField>
+              <FormField label={t('fechaInicio')} required error={state.errors?.fecha_inicio?.[0]}>
+                <input type="date" name="fecha_inicio" required defaultValue={ciclo?.fecha_inicio ?? `${anioSugerido}-01-19`} className={inputClass} />
+              </FormField>
+              <FormField label={t('fechaFin')} required error={state.errors?.fecha_fin?.[0]}>
+                <input type="date" name="fecha_fin" required defaultValue={ciclo?.fecha_fin ?? `${anioSugerido}-11-06`} className={inputClass} />
+              </FormField>
+            </div>
+            {!ciclo && <p className="text-xs text-slate-500 dark:text-slate-400">{t('trimestresAuto')}</p>}
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
+              <button type="submit" disabled={pending} className={submitButtonClass}>
+                {pending ? t('guardando') : ciclo ? t('guardarCambios') : t('crear')}
+              </button>
+            </div>
+          </form>
         </div>
-        <div className="flex justify-end pt-2">
-          <button type="submit" disabled={isPending} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
-            {isPending ? 'Guardando...' : 'Crear Ciclo Escolar'}
-          </button>
-        </div>
-      </form>
-    </div>
+      )}
+    </>
   );
 }

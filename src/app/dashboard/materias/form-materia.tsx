@@ -1,64 +1,85 @@
 'use client';
 
-import { useActionState } from 'react';
-import { crearMateria, MateriaActionState } from '@/actions/materia-actions';
+import { useActionState, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { crearMateria, editarMateria, type Materia } from '@/app/actions/materias';
+import type { Especialidad } from '@/app/actions/docentes';
+import type { ActionState } from '@/types/actions';
+import { Modal } from '@/components/ui/modal';
+import { FormField, ActionMessageBanner, inputClass, submitButtonClass } from '@/components/ui/form-field';
 
-interface Especialidad { id_especialidad: number; nombre: string; }
+interface Props {
+  especialidades: Especialidad[];
+  /**Con materia: modo edicion (el codigo no cambia) */
+  materia?: Materia;
+  /**Texto del boton que abre el modal */
+  trigger: string;
+  triggerClassName?: string;
+}
 
-export function FormMateria({ especialidades }: { especialidades: Especialidad[] }) {
-  const initialState: MateriaActionState = { success: false };
-  const [state, formAction, isPending] = useActionState(crearMateria, initialState);
+export function FormMateria({ especialidades, materia, trigger, triggerClassName }: Props) {
+  const t = useTranslations('materias');
+  const [open, setOpen] = useState(false);
+  const [state, formAction, pending] = useActionState(materia ? editarMateria : crearMateria, {} as ActionState);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Registrar Nueva Materia</h3>
-      
-      {state.message && (
-        <div className={`p-3 rounded-md mb-4 text-sm font-medium ${state.success ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>
-          {state.message}
-        </div>
-      )}
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={triggerClassName ?? 'bg-intess hover:bg-intess/85 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors'}
+      >
+        {trigger}
+      </button>
 
-      <form action={formAction} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Código *</label>
-            <input type="text" name="cod_materia" placeholder="Ej: MAT-01" maxLength={8} required className="w-full px-3 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none uppercase" />
+      <Modal title={materia ? t('editarTitle') : t('formTitle')} open={open} onClose={() => setOpen(false)}>
+        <ActionMessageBanner state={state} />
+        <form action={formAction} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormField label={t('codigo')} required error={state.errors?.cod_materia?.[0]}>
+              <input
+                type="text"
+                name="cod_materia"
+                placeholder="MAT-001"
+                maxLength={8}
+                required
+                defaultValue={materia?.cod_materia}
+                readOnly={Boolean(materia)}
+                className={`${inputClass} uppercase ${materia ? 'opacity-60 cursor-not-allowed' : ''}`}
+              />
+            </FormField>
+            <FormField label={t('unidades')} required error={state.errors?.unidades_valorativas?.[0]}>
+              <input type="number" name="unidades_valorativas" min={1} max={10} required defaultValue={materia?.unidades_valorativas ?? 1} className={inputClass} />
+            </FormField>
           </div>
-          <div className="lg:col-span-2">
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre de Materia *</label>
-            <input type="text" name="nombre" required className="w-full px-3 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Especialidad *</label>
-            <select name="id_especialidad" required defaultValue="" className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
-              <option value="" disabled>Seleccione...</option>
-              {especialidades.map(esp => (
-                <option key={esp.id_especialidad} value={esp.id_especialidad}>{esp.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-2">
-            <div className="w-1/2">
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Grado *</label>
-              <select name="grado" required defaultValue="1" className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+          <FormField label={t('nombre')} required error={state.errors?.nombre?.[0]}>
+            <input type="text" name="nombre" maxLength={100} required defaultValue={materia?.nombre} className={inputClass} />
+          </FormField>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormField label={t('especialidad')} required error={state.errors?.id_especialidad?.[0]}>
+              <select name="id_especialidad" required defaultValue={materia?.id_especialidad ?? ''} className={inputClass}>
+                <option value="" disabled>{t('seleccioneEspecialidad')}</option>
+                {especialidades.map((e) => (
+                  <option key={e.id_especialidad} value={e.id_especialidad}>{e.nombre}</option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label={t('grado')} required error={state.errors?.grado?.[0]}>
+              <select name="grado" required defaultValue={materia?.grado ?? 1} className={inputClass}>
                 <option value="1">1°</option>
                 <option value="2">2°</option>
                 <option value="3">3°</option>
               </select>
-            </div>
-            <div className="w-1/2">
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">UV *</label>
-              <input type="number" name="unidades_valorativas" defaultValue="1" min="1" max="10" required className="w-full px-3 py-2 border rounded-lg bg-transparent border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
+            </FormField>
           </div>
-        </div>
-        <div className="flex justify-end pt-2">
-          <button type="submit" disabled={isPending} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
-            {isPending ? 'Guardando...' : 'Registrar Materia'}
-          </button>
-        </div>
-      </form>
-    </div>
+          {materia && materia.cargas > 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('conCargasAviso', { cargas: materia.cargas })}</p>}
+          <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
+            <button type="submit" disabled={pending} className={submitButtonClass}>
+              {pending ? t('guardando') : materia ? t('guardarCambios') : t('crear')}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }
