@@ -481,7 +481,8 @@
     "guardarFechas": "Save dates",
     "cancelar": "Cancel",
     "confirmarFechas": "Do you confirm updating this period's dates?",
-    "exitoFechas": "Dates updated successfully."
+    "exitoFechas": "Dates updated successfully.",
+    "fechaInvalida": "The start date cannot be later than the closing date."
   },
   "notas": {
     "title": "Grade entry",

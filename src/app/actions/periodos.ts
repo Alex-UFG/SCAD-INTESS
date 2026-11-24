@@ -34,8 +34,8 @@ interface PeriodoEstadoRow extends RowDataPacket {
   fecha_cierre: string;
   estado: 'Pendiente' | 'Abierto' | 'Cerrado';
   estado_ciclo: 'Planificado' | 'Activo' | 'Cerrado';
-  inicio_ciclo: string;
-  fin_ciclo: string;
+  inicio_ciclo: string | Date;
+  fin_ciclo: string | Date;
 }
 
 interface PeriodoSolapadoRow extends RowDataPacket {
@@ -57,6 +57,12 @@ function fechaValida(fecha: string): boolean {
     !Number.isNaN(date.getTime()) &&
     date.toISOString().slice(0, 10) === fecha
   );
+}
+
+function normalizarFechaSQL(fecha: string | Date): string {
+  return fecha instanceof Date
+    ? fecha.toISOString().slice(0, 10)
+    : fecha.slice(0, 10);
 }
 
 // ======================================================
@@ -324,8 +330,8 @@ export async function actualizarFechasPeriodo(
       };
     }
 
-    const inicioCiclo = String(periodo.inicio_ciclo).slice(0, 10);
-    const finCiclo = String(periodo.fin_ciclo).slice(0, 10);
+    const inicioCiclo = normalizarFechaSQL(periodo.inicio_ciclo);
+    const finCiclo = normalizarFechaSQL(periodo.fin_ciclo);
 
     if (fechaInicio < inicioCiclo || fechaCierre > finCiclo) {
       await connection.rollback();

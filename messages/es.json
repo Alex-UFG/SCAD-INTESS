@@ -481,7 +481,8 @@
     "guardarFechas": "Guardar fechas",
     "cancelar": "Cancelar",
     "confirmarFechas": "¿Confirmas que deseas actualizar las fechas de este período?",
-    "exitoFechas": "Fechas actualizadas correctamente."
+    "exitoFechas": "Fechas actualizadas correctamente.",
+    "fechaInvalida": "La fecha de inicio no puede ser posterior a la fecha de cierre."
   },
   "notas": {
     "title": "Registro de notas",

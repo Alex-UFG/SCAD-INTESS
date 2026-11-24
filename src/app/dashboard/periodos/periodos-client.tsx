@@ -41,6 +41,7 @@ interface Props {
     cancelar: string;
     confirmarFechas: string;
     exitoFechas: string;
+    fechaInvalida: string;
   };
 }
 
@@ -172,8 +173,11 @@ export default function PeriodosClient({ periodos, labels }: Props) {
     }
 
     if (fechaInicio > fechaCierre) {
-      setMensaje({ tipo: "error", texto: labels.errorOperacion });
-      return;
+        setMensaje({
+            tipo: "error",
+            texto: labels.fechaInvalida,
+        });
+        return;
     }
 
     if (!window.confirm(labels.confirmarFechas)) return;

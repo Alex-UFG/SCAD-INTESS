@@ -1,23 +1,20 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import BoletaPdfDownload from "./BoletaPdfDownload";
+import ConstanciaPdfDownload from "./ConstanciaPdfDownload";
+import { getConstanciaMatricula } from "@/app/actions/constancias";
+import {
+  buscarEstudiantesBoleta,
+  getBoletaEstudiante,
+  getContextoBoletas,
+  type EstudianteBoleta,
+} from "@/app/actions/boletas";
 
-const estudiantes = [
-  { nie: "10001", nombre: "Ana María López", seccion: "1° A" },
-  { nie: "10002", nombre: "Carlos Hernández", seccion: "1° A" },
-  { nie: "10003", nombre: "María Fernanda Pérez", seccion: "1° A" },
-  { nie: "10004", nombre: "José Antonio Martínez", seccion: "1° A" },
-  { nie: "10005", nombre: "Sofía Ramírez", seccion: "1° A" },
-];
-
-const calificaciones = [
-  { materia: "Programación", act1: 8.5, act2: 9, examen: 8, promedio: 8.53 },
-  { materia: "Matemática", act1: 7, act2: 8, examen: 7.5, promedio: 7.48 },
-  { materia: "Contabilidad", act1: 9, act2: 8.5, examen: 9, promedio: 8.83 },
-  { materia: "Ciencias", act1: 6, act2: 7, examen: 6.5, promedio: 6.48 },
-];
+type ContextoBoletas = Awaited<ReturnType<typeof getContextoBoletas>>;
+type DatosBoleta = Awaited<ReturnType<typeof getBoletaEstudiante>>;
+type DatosConstancia = Awaited<ReturnType<typeof getConstanciaMatricula>>;
 
 const reportes = [
   { codigo: "REP-01", titulo: "boleta", descripcion: "boletaDesc" },
@@ -25,26 +22,240 @@ const reportes = [
   { codigo: "REP-02", titulo: "consolidado", descripcion: "consolidadoDesc" },
 ] as const;
 
+function formatoNota(valor: number | null): string {
+  return valor === null ? "Pendiente" : valor.toFixed(2);
+}
+
 export default function BoletasPage() {
   const t = useTranslations("boletas");
+
+  const [contexto, setContexto] = useState<ContextoBoletas | null>(null);
+  const [ciclo, setCiclo] = useState("");
+  const [periodo, setPeriodo] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  const [seleccionado, setSeleccionado] = useState("10001");
-  const [periodo, setPeriodo] = useState("2");
-  const [ciclo, setCiclo] = useState("2026");
-  const [tipo, setTipo] = useState("REP-01");
+  const [estudiantes, setEstudiantes] = useState<EstudianteBoleta[]>([]);
+  const [seleccionado, setSeleccionado] = useState<EstudianteBoleta | null>(null);
+  const [boleta, setBoleta] = useState<DatosBoleta | null>(null);
+  const [constancia, setConstancia] = useState<DatosConstancia | null>(null);
+  const [cargandoConstancia, setCargandoConstancia] = useState(false);
+  const [cargandoContexto, setCargandoContexto] = useState(true);
+  const [buscando, setBuscando] = useState(false);
+  const [cargandoBoleta, setCargandoBoleta] = useState(false);
+  const [error, setError] = useState("");
 
-  const encontrados = estudiantes.filter((est) =>
-    `${est.nie} ${est.nombre}`.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  useEffect(() => {
+    let activo = true;
 
-  const estudiante = estudiantes.find((est) => est.nie === seleccionado);
+    async function cargarContexto() {
+      try {
+        const datos = await getContextoBoletas();
 
-  const reporteSeleccionado = reportes.find((r) => r.codigo === tipo);
+        if (!activo) return;
 
-  const promedioGeneral = (
-    calificaciones.reduce((total, nota) => total + nota.promedio, 0) /
-    calificaciones.length
-  ).toFixed(2);
+        setContexto(datos);
+
+        const cicloInicial =
+          datos.ciclos.find((item) => item.estado === "Activo") ??
+          datos.ciclos[0];
+
+        if (cicloInicial) {
+          setCiclo(String(cicloInicial.id_ciclo));
+
+          const periodosCiclo = datos.periodos.filter(
+            (item) => item.id_ciclo === cicloInicial.id_ciclo
+          );
+
+          const periodoInicial =
+            periodosCiclo.find((item) => item.estado === "Abierto") ??
+            periodosCiclo[0];
+
+          if (periodoInicial) {
+            setPeriodo(String(periodoInicial.id_periodo));
+          }
+        }
+      } catch (err) {
+        if (activo) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "No fue posible cargar la información."
+          );
+        }
+      } finally {
+        if (activo) setCargandoContexto(false);
+      }
+    }
+
+    void cargarContexto();
+
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let activo = true;
+
+    async function buscar() {
+      if (
+        seleccionado &&
+        busqueda === `${seleccionado.nie} - ${seleccionado.nombre}`
+      ) {
+        setEstudiantes([]);
+        setBuscando(false);
+        return;
+      }
+
+      setSeleccionado(null);
+      setBoleta(null);
+      setEstudiantes([]);
+      setError("");
+
+      if (!ciclo || busqueda.trim().length < 2) {
+        setBuscando(false);
+        return;
+      }
+
+      setBuscando(true);
+
+      try {
+        const resultados = await buscarEstudiantesBoleta(
+          busqueda,
+          Number(ciclo)
+        );
+
+        if (activo) setEstudiantes(resultados);
+      } catch (err) {
+        if (activo) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "No fue posible buscar estudiantes."
+          );
+        }
+      } finally {
+        if (activo) setBuscando(false);
+      }
+    }
+
+    void buscar();
+
+    return () => {
+      activo = false;
+    };
+  }, [busqueda, ciclo, seleccionado]);
+
+  useEffect(() => {
+    let activo = true;
+
+    async function cargarBoleta() {
+      if (!seleccionado || !ciclo || !periodo) {
+        setBoleta(null);
+        return;
+      }
+
+      setCargandoBoleta(true);
+      setError("");
+
+      try {
+        const datos = await getBoletaEstudiante(
+          seleccionado.nie,
+          Number(ciclo),
+          Number(periodo)
+        );
+
+        if (activo) setBoleta(datos);
+      } catch (err) {
+        if (activo) {
+          setBoleta(null);
+          setError(
+            err instanceof Error
+              ? err.message
+              : "No fue posible consultar la boleta."
+          );
+        }
+      } finally {
+        if (activo) setCargandoBoleta(false);
+      }
+    }
+
+    void cargarBoleta();
+
+    return () => {
+      activo = false;
+    };
+  }, [seleccionado, ciclo, periodo]);
+
+  const periodosDisponibles =
+    contexto?.periodos.filter(
+      (item) => item.id_ciclo === Number(ciclo)
+    ) ?? [];
+
+  function cambiarCiclo(valor: string) {
+    setCiclo(valor);
+    setSeleccionado(null);
+    setBoleta(null);
+    setBusqueda("");
+    setEstudiantes([]);
+
+    const periodosCiclo =
+      contexto?.periodos.filter(
+        (item) => item.id_ciclo === Number(valor)
+      ) ?? [];
+
+    const periodoInicial =
+      periodosCiclo.find((item) => item.estado === "Abierto") ??
+      periodosCiclo[0];
+
+    setPeriodo(periodoInicial ? String(periodoInicial.id_periodo) : "");
+  }
+
+  function seleccionarEstudiante(estudiante: EstudianteBoleta) {
+    setSeleccionado(estudiante);
+    setBusqueda(`${estudiante.nie} - ${estudiante.nombre}`);
+    setEstudiantes([]);
+  }
+
+  useEffect(() => {
+    let activo = true;
+
+    async function cargarConstancia() {
+      if (!seleccionado || !ciclo) {
+        setConstancia(null);
+        return;
+      }
+
+      setCargandoConstancia(true);
+
+      try {
+        const datos = await getConstanciaMatricula(
+          seleccionado.nie,
+          Number(ciclo)
+        );
+
+        if (activo) setConstancia(datos);
+      } catch (err) {
+        if (activo) {
+          setConstancia(null);
+          setError(
+            err instanceof Error
+              ? err.message
+              : "No fue posible consultar la constancia de matrícula."
+          );
+        }
+      } finally {
+        if (activo) setCargandoConstancia(false);
+      }
+    }
+
+    void cargarConstancia();
+
+    return () => {
+      activo = false;
+    };
+  }, [seleccionado, ciclo]);
+
+  const reporteSeleccionado = reportes[0];
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
@@ -57,61 +268,113 @@ export default function BoletasPage() {
         </p>
       </div>
 
-      <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-300">
-        {t("demo")}
-      </div>
+      {error && (
+        <div
+          role="alert"
+          className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+        >
+          {error}
+        </div>
+      )}
 
       <section className="mb-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
         <h2 className="mb-4 text-sm font-semibold text-intess-dark dark:text-slate-100">
           {t("busqueda")}
         </h2>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="text-sm text-slate-600 dark:text-slate-300">
-            {t("estudiante")}
-            <input
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder={t("buscar")}
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            />
-            <select
-              value={seleccionado}
-              onChange={(e) => setSeleccionado(e.target.value)}
-              className="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            >
-              {encontrados.map((est) => (
-                <option key={est.nie} value={est.nie}>
-                  {est.nie} - {est.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
+        {cargandoContexto ? (
+          <p className="text-sm text-slate-500">Cargando ciclos y períodos...</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="text-sm text-slate-600 dark:text-slate-300">
+              {t("estudiante")}
+              <input
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder={t("buscar")}
+                disabled={!ciclo}
+                autoComplete="off"
+                className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              />
 
-          <label className="text-sm text-slate-600 dark:text-slate-300">
-            {t("ciclo")}
-            <select
-              value={ciclo}
-              onChange={(e) => setCiclo(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            >
-              <option value="2026">2026</option>
-            </select>
-          </label>
+              {buscando && (
+                <span className="mt-1 block text-xs text-slate-500">
+                  Buscando estudiantes...
+                </span>
+              )}
 
-          <label className="text-sm text-slate-600 dark:text-slate-300">
-            {t("periodo")}
-            <select
-              value={periodo}
-              onChange={(e) => setPeriodo(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            >
-              <option value="1">{t("primero")}</option>
-              <option value="2">{t("segundo")}</option>
-              <option value="3">{t("tercero")}</option>
-            </select>
-          </label>
-        </div>
+              {estudiantes.length > 0 && (
+                <div className="mt-1 max-h-52 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                  {estudiantes.map((estudiante) => (
+                    <button
+                      key={estudiante.nie}
+                      type="button"
+                      onClick={() => seleccionarEstudiante(estudiante)}
+                      className="block w-full border-b border-slate-100 px-3 py-2 text-left text-sm last:border-0 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700"
+                    >
+                      <span className="font-medium text-slate-800 dark:text-slate-100">
+                        {estudiante.nombre}
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        NIE: {estudiante.nie} · {estudiante.grado}° {estudiante.seccion}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {busqueda.trim().length >= 2 &&
+                !buscando &&
+                estudiantes.length === 0 &&
+                !seleccionado && (
+                  <span className="mt-1 block text-xs text-slate-500">
+                    No se encontraron estudiantes con matrícula vigente.
+                  </span>
+                )}
+            </label>
+
+            <label className="text-sm text-slate-600 dark:text-slate-300">
+              {t("ciclo")}
+              <select
+                value={ciclo}
+                onChange={(e) => cambiarCiclo(e.target.value)}
+                className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              >
+                {contexto?.ciclos.map((item) => (
+                  <option key={item.id_ciclo} value={item.id_ciclo}>
+                    {item.anio} - {item.estado}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="text-sm text-slate-600 dark:text-slate-300">
+              {t("periodo")}
+              <select
+                value={periodo}
+                onChange={(e) => {
+                  setPeriodo(e.target.value);
+                  setBoleta(null);
+                }}
+                disabled={periodosDisponibles.length === 0}
+                className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              >
+                {periodosDisponibles.map((item) => (
+                  <option key={item.id_periodo} value={item.id_periodo}>
+                    {t(
+                      item.numero === 1
+                        ? "primero"
+                        : item.numero === 2
+                          ? "segundo"
+                          : "tercero"
+                    )}{" "}
+                    - {item.estado}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
       </section>
 
       <section className="mb-6">
@@ -121,14 +384,12 @@ export default function BoletasPage() {
 
         <div className="grid gap-4 md:grid-cols-3">
           {reportes.map((reporte) => (
-            <button
+            <div
               key={reporte.codigo}
-              type="button"
-              onClick={() => setTipo(reporte.codigo)}
-              className={`rounded-xl border p-4 text-left transition-colors ${
-                tipo === reporte.codigo
+              className={`rounded-xl border p-4 ${
+                reporte.codigo === "REP-01"
                   ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-950/30"
-                  : "border-slate-200 bg-white hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900"
+                  : "border-slate-200 bg-white opacity-60 dark:border-slate-700 dark:bg-slate-900"
               }`}
             >
               <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
@@ -140,7 +401,12 @@ export default function BoletasPage() {
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 {t(reporte.descripcion)}
               </p>
-            </button>
+              {reporte.codigo === "REP-02" && (
+                <span className="mt-2 inline-block text-xs text-slate-500">
+                  Pendiente de implementación
+                </span>
+              )}
+            </div>
           ))}
         </div>
       </section>
@@ -152,21 +418,35 @@ export default function BoletasPage() {
               {t("vistaPrevia")}
             </h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              {reporteSeleccionado ? t(reporteSeleccionado.titulo) : ""}
+              {t(reporteSeleccionado.titulo)}
             </p>
           </div>
 
-          <button
-            type="button"
-            disabled
-            title={t("pdfPendiente")}
-            className="cursor-not-allowed rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white opacity-50"
-          >
-            {t("generarPdf")}
-          </button>
+          {boleta && !cargandoBoleta ? (
+            <BoletaPdfDownload boleta={boleta} />
+          ) : (
+            <button
+              type="button"
+              disabled
+              title={t("pdfPendiente")}
+              className="cursor-not-allowed rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white opacity-50"
+            >
+              {t("generarPdf")}
+            </button>
+          )}
         </div>
 
-        {tipo === "REP-01" && estudiante && (
+        {cargandoBoleta ? (
+          <div className="p-10 text-center text-sm text-slate-500">
+            Consultando información académica...
+          </div>
+        ) : !boleta ? (
+          <div className="p-10 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Selecciona un estudiante para consultar su boleta de calificaciones.
+            </p>
+          </div>
+        ) : (
           <div className="p-5 sm:p-8">
             <div className="mx-auto max-w-3xl border border-slate-200 p-5 sm:p-8 dark:border-slate-700">
               <div className="border-b-2 border-blue-700 pb-4 text-center dark:border-blue-400">
@@ -180,7 +460,7 @@ export default function BoletasPage() {
                   {t("boleta")}
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {t("periodo")} {periodo} · {ciclo}
+                  {t("periodo")} {boleta.periodo.numero} · {boleta.anio}
                 </p>
               </div>
 
@@ -188,19 +468,25 @@ export default function BoletasPage() {
                 <div>
                   <p className="text-xs text-slate-400">{t("nombreAlumno")}</p>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {estudiante.nombre}
+                    {boleta.estudiante.nombre}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">NIE</p>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {estudiante.nie}
+                    {boleta.estudiante.nie}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">{t("seccion")}</p>
                   <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {estudiante.seccion}
+                    {boleta.estudiante.grado}° {boleta.estudiante.seccion}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">Especialidad</p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    {boleta.estudiante.especialidad}
                   </p>
                 </div>
               </div>
@@ -210,51 +496,133 @@ export default function BoletasPage() {
                   <thead>
                     <tr className="border-y border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
                       {[t("materia"), t("act1"), t("act2"), t("examen"), t("promedio")].map((col) => (
-                        <th key={col} className="px-2 py-3 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <th
+                          key={col}
+                          className="px-2 py-3 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                        >
                           {col}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {calificaciones.map((nota) => (
-                      <tr key={nota.materia} className="border-b border-slate-100 dark:border-slate-800">
-                        <td className="px-2 py-3 text-xs font-medium text-slate-800 dark:text-slate-200">{nota.materia}</td>
-                        <td className="px-2 py-3 text-xs text-slate-600 dark:text-slate-400">{nota.act1.toFixed(2)}</td>
-                        <td className="px-2 py-3 text-xs text-slate-600 dark:text-slate-400">{nota.act2.toFixed(2)}</td>
-                        <td className="px-2 py-3 text-xs text-slate-600 dark:text-slate-400">{nota.examen.toFixed(2)}</td>
-                        <td className="px-2 py-3 text-xs font-bold text-slate-800 dark:text-slate-200">{nota.promedio.toFixed(2)}</td>
+                    {boleta.materias.map((nota) => (
+                      <tr
+                        key={nota.cod_materia}
+                        className="border-b border-slate-100 dark:border-slate-800"
+                      >
+                        <td className="px-2 py-3 text-xs font-medium text-slate-800 dark:text-slate-200">
+                          {nota.materia}
+                        </td>
+                        <td className="px-2 py-3 text-xs text-slate-600 dark:text-slate-400">
+                          {formatoNota(nota.act1)}
+                        </td>
+                        <td className="px-2 py-3 text-xs text-slate-600 dark:text-slate-400">
+                          {formatoNota(nota.act2)}
+                        </td>
+                        <td className="px-2 py-3 text-xs text-slate-600 dark:text-slate-400">
+                          {formatoNota(nota.examen)}
+                        </td>
+                        <td className="px-2 py-3 text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {formatoNota(nota.promedio)}
+                        </td>
                       </tr>
                     ))}
+                    {boleta.materias.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-3 py-8 text-center text-sm text-slate-500"
+                        >
+                          No hay materias registradas en la carga académica de esta sección.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
 
-              <div className="mt-5 flex justify-end">
-                <div className="rounded-lg bg-slate-50 px-5 py-3 dark:bg-slate-800">
-                  <p className="text-xs text-slate-500">{t("promedioGeneral")}</p>
-                  <p className="text-2xl font-bold text-intess-dark dark:text-slate-100">{promedioGeneral}</p>
-                </div>
-              </div>
-
-              <p className="mt-8 border-t border-slate-200 pt-4 text-center text-xs text-slate-400 dark:border-slate-700">
+              <p className="mt-5 border-t border-slate-200 pt-4 text-center text-xs text-slate-400 dark:border-slate-700">
                 {t("pieDocumento")}
               </p>
             </div>
           </div>
         )}
+      </section>
 
-        {tipo !== "REP-01" && (
-          <div className="p-10 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-              <span className="text-xl">PDF</span>
-            </div>
-            <h3 className="font-semibold text-intess-dark dark:text-slate-100">
-              {tipo === "REP-03" ? t("constancia") : t("consolidado")}
-            </h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
-              {tipo === "REP-03" ? t("constanciaPendiente") : t("consolidadoPendiente")}
+      <section className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-700">
+          <div>
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+              REP-03
+            </span>
+            <h2 className="mt-1 text-sm font-semibold text-intess-dark dark:text-slate-100">
+              Constancia de matrícula
+            </h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Documento que acredita la matrícula vigente del estudiante en el ciclo seleccionado.
             </p>
+          </div>
+
+          {constancia && !cargandoConstancia ? (
+            <ConstanciaPdfDownload constancia={constancia} />
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="cursor-not-allowed rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white opacity-50"
+            >
+              {cargandoConstancia ? "Preparando constancia..." : "Selecciona un estudiante"}
+            </button>
+          )}
+        </div>
+
+        {cargandoConstancia ? (
+          <div className="p-8 text-center text-sm text-slate-500">
+            Consultando matrícula vigente...
+          </div>
+        ) : !constancia ? (
+          <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            Selecciona un estudiante para consultar y generar su constancia de matrícula.
+          </div>
+        ) : (
+          <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="text-xs text-slate-400">Estudiante</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {constancia.nombre}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">NIE</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {constancia.nie}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Grado y sección</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {constancia.grado}° {constancia.seccion}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Especialidad</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {constancia.especialidad}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Ciclo escolar</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {constancia.anio}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Estado de matrícula</p>
+              <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                {constancia.estado}
+              </p>
+            </div>
           </div>
         )}
       </section>

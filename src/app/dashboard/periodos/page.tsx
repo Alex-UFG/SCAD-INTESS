@@ -46,6 +46,7 @@ export default async function PeriodosPage() {
         cancelar: t("cancelar"),
         confirmarFechas: t("confirmarFechas"),
         exitoFechas: t("exitoFechas"),
+        fechaInvalida: t("fechaInvalida"),
       }}
     />
   );
