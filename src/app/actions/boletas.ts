@@ -1,30 +1,15 @@
-﻿"use server";
+﻿'use server';
 
-import type { RowDataPacket } from "mysql2";
-import { db } from "@/lib/db";
-import { requirePermiso } from "@/lib/permisos";
+import type { RowDataPacket } from 'mysql2';
+import { db } from '@/lib/db';
+import { requirePermiso } from '@/lib/permisos';
+import { fechaIso } from '@/lib/format';
 
-export interface CicloBoleta {
-  id_ciclo: number;
-  anio: number;
-  estado: string;
-}
-
-export interface PeriodoBoleta {
-  id_periodo: number;
-  id_ciclo: number;
-  numero: number;
-  fecha_inicio: string;
-  fecha_cierre: string;
-  estado: string;
-}
-
-export interface EstudianteBoleta {
+export interface EstudianteReporte {
   nie: number;
   nombre: string;
-  id_seccion: number;
-  seccion: string;
   grado: number;
+  seccion: string;
   especialidad: string;
 }
 
@@ -38,255 +23,85 @@ export interface MateriaBoleta {
   riesgo_academico: boolean;
 }
 
-interface CicloRow extends RowDataPacket, CicloBoleta {}
-interface PeriodoRow extends RowDataPacket, PeriodoBoleta {}
-interface EstudianteRow extends RowDataPacket, EstudianteBoleta {}
-
-interface MateriaRow extends RowDataPacket {
-  cod_materia: string;
-  materia: string;
-  act1: number | string | null;
-  act2: number | string | null;
-  examen: number | string | null;
-  promedio: number | string | null;
-  riesgo_academico: number;
+export interface Boleta {
+  estudiante: EstudianteReporte;
+  anio: number;
+  numeroPeriodo: number;
+  materias: MateriaBoleta[];
 }
 
-function validarId(id: number): boolean {
-  return Number.isSafeInteger(id) && id > 0;
+export interface ConstanciaMatricula extends EstudianteReporte {
+  anio: number;
+  fecha_matricula: string;
 }
 
-function normalizarNota(valor: number | string | null): number | null {
-  return valor === null ? null : Number(valor);
+const SELECT_MATRICULA = `
+  SELECT e.nie, CONCAT_WS(' ', e.primer_nombre, e.segundo_nombre, e.primer_apellido, e.segundo_apellido) AS nombre,
+         s.id_seccion, s.grado, s.nombre AS seccion, esp.nombre AS especialidad, c.anio, m.fecha_matricula
+    FROM matricula m
+    INNER JOIN estudiante e ON e.nie = m.nie
+    INNER JOIN seccion s ON s.id_seccion = m.id_seccion
+    INNER JOIN especialidad esp ON esp.id_especialidad = s.id_especialidad
+    INNER JOIN ciclo_escolar c ON c.id_ciclo = m.id_ciclo
+   WHERE m.id_ciclo = ? AND m.estado = 'Vigente'`;
+
+const mapEstudiante = (r: RowDataPacket): EstudianteReporte => ({
+  nie: r.nie,
+  nombre: r.nombre,
+  grado: r.grado,
+  seccion: r.seccion,
+  especialidad: r.especialidad,
+});
+
+const aNumero = (v: number | string | null) => (v === null ? null : Number(v));
+
+/**Estudiantes con matricula Vigente en el ciclo: a ellos se les emiten boleta y constancia */
+export async function getEstudiantesReporte(idCiclo: number): Promise<EstudianteReporte[]> {
+  if (!(await requirePermiso('reportes.boleta'))) return [];
+  const [rows] = await db.query<RowDataPacket[]>(
+    `${SELECT_MATRICULA} ORDER BY s.grado, s.nombre, e.primer_apellido, e.segundo_apellido, e.primer_nombre`,
+    [idCiclo]
+  );
+  return rows.map(mapEstudiante);
 }
 
-async function validarPermisoBoleta() {
-  const session = await requirePermiso("reportes.boleta");
+/**REP-01: notas del estudiante en cada materia de la carga de su seccion */
+export async function getBoleta(nie: number, idCiclo: number, idPeriodo: number): Promise<Boleta | null> {
+  if (!(await requirePermiso('reportes.boleta'))) return null;
+  const [[[matricula]], [[periodo]]] = await Promise.all([
+    db.query<RowDataPacket[]>(`${SELECT_MATRICULA} AND m.nie = ?`, [idCiclo, nie]),
+    db.query<RowDataPacket[]>('SELECT numero FROM periodo_evaluativo WHERE id_periodo = ? AND id_ciclo = ?', [idPeriodo, idCiclo]),
+  ]);
+  if (!matricula || !periodo) return null;
 
-  if (!session) {
-    throw new Error("No tienes permiso para consultar boletas de calificaciones.");
-  }
-
-  return session;
+  const [materias] = await db.query<RowDataPacket[]>(
+    `SELECT DISTINCT m.cod_materia, m.nombre AS materia, n.nota_act1, n.nota_act2, n.nota_examen, n.promedio, n.riesgo_academico
+       FROM carga_academica ca
+       INNER JOIN materia m ON m.cod_materia = ca.cod_materia
+       LEFT JOIN nota n ON n.cod_materia = ca.cod_materia AND n.nie = ? AND n.id_periodo = ?
+      WHERE ca.id_seccion = ? AND ca.id_ciclo = ?
+      ORDER BY m.nombre`,
+    [nie, idPeriodo, matricula.id_seccion, idCiclo]
+  );
+  return {
+    estudiante: mapEstudiante(matricula),
+    anio: matricula.anio,
+    numeroPeriodo: periodo.numero,
+    materias: materias.map((r) => ({
+      cod_materia: r.cod_materia,
+      materia: r.materia,
+      act1: aNumero(r.nota_act1),
+      act2: aNumero(r.nota_act2),
+      examen: aNumero(r.nota_examen),
+      promedio: aNumero(r.promedio),
+      riesgo_academico: Boolean(r.riesgo_academico),
+    })),
+  };
 }
 
-/**
- * Obtiene los ciclos y períodos disponibles para generar REP-01.
- */
-export async function getContextoBoletas() {
-  await validarPermisoBoleta();
-
-  try {
-    const [ciclos] = await db.query<CicloRow[]>(`
-      SELECT id_ciclo, anio, estado
-      FROM ciclo_escolar
-      ORDER BY anio DESC
-    `);
-
-    const [periodos] = await db.query<PeriodoRow[]>(`
-      SELECT
-        id_periodo,
-        id_ciclo,
-        numero,
-        fecha_inicio,
-        fecha_cierre,
-        estado
-      FROM periodo_evaluativo
-      ORDER BY id_ciclo DESC, numero ASC
-    `);
-
-    return { ciclos, periodos };
-  } catch (error) {
-    console.error("Error consultando contexto de boletas:", error);
-    throw new Error("No fue posible consultar los ciclos y períodos escolares.");
-  }
-}
-
-/**
- * Busca estudiantes con matrícula vigente en el ciclo seleccionado.
- * Limita los resultados para evitar consultas demasiado amplias.
- */
-export async function buscarEstudiantesBoleta(
-  termino: string,
-  idCiclo: number
-): Promise<EstudianteBoleta[]> {
-  await validarPermisoBoleta();
-
-  if (!validarId(idCiclo)) {
-    throw new Error("El ciclo escolar seleccionado no es válido.");
-  }
-
-  const busqueda = termino.trim();
-
-  if (busqueda.length < 2) {
-    return [];
-  }
-
-  try {
-    const patron = `%${busqueda}%`;
-
-    const [rows] = await db.query<EstudianteRow[]>(`
-      SELECT
-        est.nie,
-        TRIM(CONCAT_WS(' ',
-          est.primer_nombre,
-          est.segundo_nombre,
-          est.primer_apellido,
-          est.segundo_apellido
-        )) AS nombre,
-        sec.id_seccion,
-        sec.nombre AS seccion,
-        sec.grado,
-        esp.nombre AS especialidad
-      FROM matricula mat
-      INNER JOIN estudiante est ON est.nie = mat.nie
-      INNER JOIN seccion sec ON sec.id_seccion = mat.id_seccion
-      INNER JOIN especialidad esp
-        ON esp.id_especialidad = sec.id_especialidad
-      WHERE mat.id_ciclo = ?
-        AND mat.estado = 'Vigente'
-        AND (
-          CAST(est.nie AS CHAR) LIKE ?
-          OR CONCAT_WS(' ',
-            est.primer_nombre,
-            est.segundo_nombre,
-            est.primer_apellido,
-            est.segundo_apellido
-          ) LIKE ?
-        )
-      ORDER BY est.primer_apellido, est.primer_nombre
-      LIMIT 30
-    `, [idCiclo, patron, patron]);
-
-    return rows;
-  } catch (error) {
-    console.error("Error buscando estudiantes para boletas:", error);
-    throw new Error("No fue posible buscar los estudiantes.");
-  }
-}
-
-/**
- * Obtiene la información académica y las notas de un estudiante
- * para un período específico. REP-01.
- */
-export async function getBoletaEstudiante(
-  nie: number,
-  idCiclo: number,
-  idPeriodo: number
-) {
-  await validarPermisoBoleta();
-
-  if (
-    !validarId(nie) ||
-    !validarId(idCiclo) ||
-    !validarId(idPeriodo)
-  ) {
-    throw new Error("Los datos seleccionados para la boleta no son válidos.");
-  }
-
-  try {
-    const [periodos] = await db.query<PeriodoRow[]>(`
-      SELECT
-        id_periodo,
-        id_ciclo,
-        numero,
-        fecha_inicio,
-        fecha_cierre,
-        estado
-      FROM periodo_evaluativo
-      WHERE id_periodo = ? AND id_ciclo = ?
-      LIMIT 1
-    `, [idPeriodo, idCiclo]);
-
-    const periodo = periodos[0];
-
-    if (!periodo) {
-      throw new Error("El período seleccionado no pertenece al ciclo escolar.");
-    }
-
-    const [estudiantes] = await db.query<EstudianteRow[]>(`
-      SELECT
-        est.nie,
-        TRIM(CONCAT_WS(' ',
-          est.primer_nombre,
-          est.segundo_nombre,
-          est.primer_apellido,
-          est.segundo_apellido
-        )) AS nombre,
-        sec.id_seccion,
-        sec.nombre AS seccion,
-        sec.grado,
-        esp.nombre AS especialidad
-      FROM matricula mat
-      INNER JOIN estudiante est ON est.nie = mat.nie
-      INNER JOIN seccion sec ON sec.id_seccion = mat.id_seccion
-      INNER JOIN especialidad esp
-        ON esp.id_especialidad = sec.id_especialidad
-      WHERE mat.nie = ?
-        AND mat.id_ciclo = ?
-        AND mat.estado = 'Vigente'
-      LIMIT 1
-    `, [nie, idCiclo]);
-
-    const estudiante = estudiantes[0];
-
-    if (!estudiante) {
-      throw new Error(
-        "El estudiante no tiene una matrícula vigente en el ciclo seleccionado."
-      );
-    }
-
-    const [materias] = await db.query<MateriaRow[]>(`
-      SELECT DISTINCT
-        m.cod_materia,
-        m.nombre AS materia,
-        n.nota_act1 AS act1,
-        n.nota_act2 AS act2,
-        n.nota_examen AS examen,
-        n.promedio,
-        n.riesgo_academico
-      FROM carga_academica ca
-      INNER JOIN materia m
-        ON m.cod_materia = ca.cod_materia
-      LEFT JOIN nota n
-        ON n.cod_materia = ca.cod_materia
-        AND n.nie = ?
-        AND n.id_periodo = ?
-      WHERE ca.id_seccion = ?
-        AND ca.id_ciclo = ?
-      ORDER BY m.nombre
-    `, [nie, idPeriodo, estudiante.id_seccion, idCiclo]);
-
-    return {
-      estudiante,
-      ciclo: idCiclo,
-      anio: Number((await db.query<RowDataPacket[]>(
-        "SELECT anio FROM ciclo_escolar WHERE id_ciclo = ? LIMIT 1",
-        [idCiclo]
-      ))[0][0]?.anio),
-      periodo,
-      materias: materias.map((row) => ({
-        cod_materia: row.cod_materia,
-        materia: row.materia,
-        act1: normalizarNota(row.act1),
-        act2: normalizarNota(row.act2),
-        examen: normalizarNota(row.examen),
-        promedio: normalizarNota(row.promedio),
-        riesgo_academico: Boolean(row.riesgo_academico),
-      })),
-    };
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (
-        error.message.includes("no pertenece") ||
-        error.message.includes("no tiene una matrícula")
-      )
-    ) {
-      throw error;
-    }
-
-    console.error("Error generando consulta de boleta:", error);
-    throw new Error("No fue posible consultar la boleta del estudiante.");
-  }
+/**REP-03: acredita la matricula Vigente del estudiante en el ciclo */
+export async function getConstanciaMatricula(nie: number, idCiclo: number): Promise<ConstanciaMatricula | null> {
+  if (!(await requirePermiso('reportes.constancia'))) return null;
+  const [[r]] = await db.query<RowDataPacket[]>(`${SELECT_MATRICULA} AND m.nie = ?`, [idCiclo, nie]);
+  return r ? { ...mapEstudiante(r), anio: r.anio, fecha_matricula: fechaIso(r.fecha_matricula) } : null;
 }
