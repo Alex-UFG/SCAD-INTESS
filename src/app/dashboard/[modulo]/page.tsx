@@ -6,8 +6,6 @@ import { auth } from "@/auth";
 // Al construir un modulo real, crear su carpeta propia (gana sobre esta ruta
 // dinamica) y quitar su entrada de aqui.
 const MODULOS: Record<string, string> = {
-  notas: "notas",
-  boletas: "boletas",
   reportes: "reportes",
 };
 
