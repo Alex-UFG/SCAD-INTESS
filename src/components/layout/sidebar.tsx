@@ -9,7 +9,8 @@ import type { PermisoCodigo } from "@/lib/permisos";
 interface MenuItem {
   key: string;
   href: string;
-  permiso?: PermisoCodigo;
+  /**Con una lista basta tener cualquiera de los permisos */
+  permiso?: PermisoCodigo | PermisoCodigo[];
   roles?: number[];
   icon: ReactNode;
 }
@@ -89,8 +90,22 @@ const SECTIONS: MenuSection[] = [
         ),
       },
       {
-        // Solo rol 5 (Docente): la accion liga el perfil al id_usuario de la sesion
+        // Listado de docentes para quienes asignan carga academica
         key: "docentes",
+        href: "/dashboard/docentes",
+        permiso: "config.carga",
+        icon: (
+          <Icon>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </Icon>
+        ),
+      },
+      {
+        // Solo rol 5 (Docente): la accion liga el perfil al id_usuario de la sesion
+        key: "miPerfilDocente",
         href: "/dashboard/docentes/completar-perfil",
         roles: [5],
         icon: (
@@ -207,7 +222,7 @@ const SECTIONS: MenuSection[] = [
       {
         key: "incidencias",
         href: "/dashboard/incidencias",
-        permiso: "disciplina.ver",
+        permiso: ["disciplina.ver", "disciplina.reportar"],
         icon: (
           <Icon>
             <path d="M12 3 2.5 20h19L12 3z" />
@@ -234,7 +249,6 @@ const SECTIONS: MenuSection[] = [
       {
         key: "notificaciones",
         href: "/dashboard/notificaciones",
-        roles: [1, 3, 4],
         icon: (
           <Icon>
             <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6" />
@@ -340,7 +354,7 @@ interface MenuContentProps {
 }
 
 function visibleParaRol(item: MenuItem, rol: number, permisos: Set<string>): boolean {
-  if (item.permiso) return permisos.has(item.permiso);
+  if (item.permiso) return [item.permiso].flat().some((p) => permisos.has(p));
   if (item.roles) return item.roles.includes(rol);
   return true;
 }
@@ -393,14 +407,14 @@ export function Sidebar({ rol, permisos }: SidebarProps) {
   return (
     <>
       {/* Desktop */}
-      <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:block">
+      <aside className="sticky top-16 hidden print:hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 lg:block">
         <MenuContent rol={rol} permisos={permisosSet} />
       </aside>
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t("open")}
-        className="fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-intess text-white shadow-lg lg:hidden"
+        className="fixed bottom-5 left-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-intess text-white shadow-lg lg:hidden print:hidden"
       >
         <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" {...stroke}>
           <path d="M4 6h16M4 12h16M4 18h16" />

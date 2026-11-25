@@ -60,7 +60,7 @@ export function VincularTutorModal({ nie, tutores }: VincularTutorModalProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+        className="text-sm text-intess hover:text-intess-dark font-medium"
       >
         {t('vincularBoton')}
       </button>
@@ -69,9 +69,9 @@ export function VincularTutorModal({ nie, tutores }: VincularTutorModalProps) {
         <ServerErrorBanner message={serverError} />
 
         {tutores.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {t('sinTutores')}{' '}
-            <Link href="/dashboard/tutores/nuevo" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline">
+            <Link href="/dashboard/tutores/nuevo" className="text-intess hover:text-intess-dark dark:text-intess-accent dark:hover:text-intess-accent font-medium hover:underline">
               {t('registrarUno')}
             </Link>
           </p>
@@ -99,12 +99,12 @@ export function VincularTutorModal({ nie, tutores }: VincularTutorModalProps) {
               </select>
             </FormField>
 
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input type="checkbox" {...register('contacto_principal')} className="h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500" />
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+              <input type="checkbox" {...register('contacto_principal')} className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-intess focus:ring-intess" />
               {t('contactoPrincipal')}
             </label>
 
-            <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
               <button type="submit" disabled={isSubmitting} className={submitButtonClass}>
                 {isSubmitting ? tCommon('saving') : t('vincularGuardar')}
               </button>

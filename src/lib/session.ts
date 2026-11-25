@@ -11,6 +11,13 @@ export async function requireSession() {
   return session;
 }
 
+/**Sesion obligatoria para lecturas: lanza UNAUTHORIZED si no hay */
+export async function exigirSesion() {
+  const session = await requireSession();
+  if (!session) throw new Error("UNAUTHORIZED");
+  return session;
+}
+
 /**Sesion con rol de administrador (id_rol = 1) o null */
 export async function requireAdmin() {
   const session = await requireSession();

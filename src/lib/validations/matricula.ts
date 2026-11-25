@@ -8,7 +8,7 @@ export const createMatriculaSchema = (t: Traductor = claveComoMensaje) =>
     id_seccion: z.coerce.number().int().positive(t('seccionRequerida')),
     id_ciclo: z.coerce.number().int().positive(t('cicloRequerido')),
     fecha_matricula: fechaISO(t('fechaMatriculaInvalida')),
-    estado: z.enum(['Vigente', 'Retirado', 'Trasladado']).default('Vigente'),
+    // el estado no viene del formulario: toda matricula nueva es Vigente
     observaciones: z.string().max(500).nullable().optional(),
   });
 
